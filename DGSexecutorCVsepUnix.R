@@ -20,7 +20,7 @@ library(mgcv)
 library(car)
 library(FSelector)
 
-setwd('~/git/SR.SRGMR')
+setwd('~/git/SoftwareReliabilityPrediction')
 
 load("envs/envQ1.data.RData")
 load("envs/envQ1.vars.RData")
