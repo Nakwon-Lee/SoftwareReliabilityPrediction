@@ -44,6 +44,48 @@ settingDGS <- function(goflist,gofnlist,gofddmlist,
   return(retdf)
 }
 
+# settingDGStest <- function(goflist,gofnlist,gofddmlist,
+#                        metadf,pcri,totpert,
+#                        goffts,metafts,
+#                        gofretdf,ddmretdf){
+#   
+#   param <- list()
+#   param$orig <- 1
+#   param$margin <- 1
+#   
+#   resultvec <- vector()
+#   DGSretdf <- NULL
+#   
+#   for (i in 1:length(goflist)) {
+#     cat(paste0(i," "))
+#     
+#     picked <- c(i)
+#     
+#     tempret <- execDGS(goflist = goflist[-picked],gofnlist = gofnlist[-picked],
+#                        gofddmlist = gofddmlist[-picked],metadf = metadf[-picked],
+#                        pcri = pcri,totpert = totpert,
+#                        goffts = goffts,metafts = metafts,
+#                        psearch = "GIVEN",givenparam = param,
+#                        tmetadf = metadf[picked],tgofddmlist = gofddmlist[picked],
+#                        tgoflist = goflist[picked])
+#     
+#     if (is.null(DGSretdf)){
+#       DGSretdf <- tempret
+#     }else{
+#       DGSretdf <- rbind(DGSretdf,tempret)
+#     }
+#   }
+#   
+#   resultvec <- ifelse(DGSretdf[,paste0("DGS.RET.",pcri)]=="DDM",ddmretdf[,pcri],gofretdf[,pcri])
+#   
+#   retdf <- data.frame(resultvec)
+#   colnames(retdf) <- c(pcri)
+#   
+#   print(c(pcri,median(retdf[,pcri])))
+#   
+#   return(retdf)
+# }
+
 settingDGSsavedEvaluator <- function(goflist,gofnlist,gofddmlist,
                                      metadf,pcri,totpert,
                                      goffts,metafts,givenprefix){
@@ -95,10 +137,12 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                                      goffts,metafts){
   
   param <- list()
-  param$orig <- 2
-  param$margin <- 2
+  param$orig <- 1
+  param$margin <- 1
   
   resultvec <- vector()
+  
+  DGSres <- NULL
   
   for (i in 1:length(goflist)) {
     cat(paste0(i," "))
@@ -130,6 +174,13 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
         }
       }
     }
+    
+    
+    # if (is.null(DGSres)){
+    #   DGSres <- DGSretdf
+    # }else{
+    #   DGSres <- rbind(DGSres,DGSretdf)
+    # }
   }
   
   retdf <- data.frame(resultvec)
@@ -273,8 +324,8 @@ execDGS <- function(pgofldf=NULL,pddmodf=NULL,ptgofdf = NULL,
   goflret <- pgofldf
   if (is.null(goflret)){
     goflret <- setting111LOOnoout(goflist = goflist, gofregvec = paste0("N",goffts),
-                                  totpert = totpert,targets = c(paste0("N",pcri)),
-                                  measures = c(pcri),isFCTBF = "FC",
+                                  totpert = totpert,target = paste0("N",pcri),
+                                  measure = pcri,
                                   fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
   }
   
@@ -328,8 +379,8 @@ execDGS <- function(pgofldf=NULL,pddmodf=NULL,ptgofdf = NULL,
                                  orimar = givenparam,
                                  pcri = pcri)
     }else if(psearch=="DIRECT"){
-      xddm <- ddmret[,pcri]
-      ygof <- goflret[,pcri]
+      xddm <- log2(ddmret[,pcri])
+      ygof <- log2(goflret[,pcri])
       origvec <- sort(c(xddm,ygof))
       margvec <- sort(abs(ygof-xddm))
       
@@ -406,8 +457,8 @@ execDGSEvaluatorGen <- function(pgofldf=NULL,pddmodf=NULL,goflist,
   goflret <- pgofldf
   if (is.null(goflret)){
     goflret <- setting111LOOnoout(goflist = goflist, gofregvec = paste0("N",goffts),
-                                  totpert = totpert,targets = c(paste0("N",pcri)),
-                                  measures = c(pcri),isFCTBF = "FC",
+                                  totpert = totpert,target = paste0("N",pcri),
+                                  measure = pcri,
                                   fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
   }
   

@@ -3,7 +3,7 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
                                pfulldf,pfullfeats,pgofddmlist,
                                goffeats,metafeats){
   
-  kmax <- 2
+  kmax <- 100
   
   goflret <- pgofres
   if(is.null(goflret)){
@@ -18,15 +18,15 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
     ddmret <- settingDDMnoout(pgofddmlist,ppert,pcri)
   }
   
-  xddm <- ddmret[,pcri]
-  ygof <- goflret[,pcri]
+  xddm <- log2(ddmret[,pcri])
+  ygof <- log2(goflret[,pcri])
   origvec <- sort(c(xddm,ygof))
   margvec <- sort(abs(ygof-xddm))
   
   param <- list()
-  param$oidx <- ceiling(length(origvec)/2)
+  param$oidx <- ceiling(length(origvec)/4)
   param$orig <- origvec[param$oidx]
-  param$midx <- ceiling(length(margvec)/2)
+  param$midx <- ceiling(length(margvec)/4)
   param$margin <- margvec[param$midx]
   
   gofsubretlist <- list()
@@ -67,7 +67,7 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
     
     preddf <- NULL
     temP <- temperature(pk = k,pkmax = kmax)
-    newpar <- neighbour(param = currpar,pOvec = origvec,pMvec = margvec)
+    newpar <- neighbour(param = currpar,pOvec = origvec,pMvec = margvec,bestpar)
     
     newcri <- Evaluation(plist = plist,ppert = ppert,
                          pgofddmlist = pgofddmlist,pnlist = pnlist,pmetalist = pmetalist,
@@ -242,8 +242,8 @@ DDMevaluatorGen <- function(pddmres,pgofres,
   param <- orimar
   if(is.null(param)){
     param <- list()
-    param$orig <- 0
-    param$margin <- 0
+    param$orig <- 1
+    param$margin <- 1
     fulldf[paste0("DGS.SEL.",pcri)] <- as.factor(filteringLabeler(pddmres[,pcri],pgofres[,pcri],param))
   }else{
     fulldf[paste0("DGS.SEL.",pcri)] <- as.factor(filteringLabeler(pddmres[,pcri],pgofres[,pcri],param))
@@ -289,8 +289,8 @@ filteringLabeler <- function(xax,yax,porimar){
   
   selvec <- vector()
   
-  xddm <- xax
-  ysel <- yax
+  xddm <- log2(xax)
+  ysel <- log2(yax)
   
   for (j in 1:length(xax)){
     
@@ -313,19 +313,25 @@ filteringLabeler <- function(xax,yax,porimar){
 }
 
 featureSelection <- function(ptrain,pfts,pcri){
-  retfts <- pfts
-  key <- TRUE
-  while(key){
-    tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
-    retvif <- car::vif(tmodel)
-    if (length(which(retvif>10))>0){
-      vartorm <- names(retvif)[which.max(retvif)]
-      idxtorm <- which(retfts==vartorm)
-      retfts <- retfts[-idxtorm]
-    }else{
-      key <- FALSE
-    }
-  }
+  
+  tform <- as.simple.formula(pfts,pcri)
+  
+  retfts <- FSelector::cfs(tform,ptrain)
+  
+  # retfts <- pfts
+  # key <- TRUE
+  # while(key){
+  #   tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
+  #   retvif <- car::vif(tmodel)
+  #   if (length(which(retvif>10))>0){
+  #     vartorm <- names(retvif)[which.max(retvif)]
+  #     idxtorm <- which(retfts==vartorm)
+  #     retfts <- retfts[-idxtorm]
+  #   }else{
+  #     key <- FALSE
+  #   }
+  # }
+  
   return(retfts)
 }
 
@@ -346,14 +352,17 @@ overSamplingBal <- function(origdf,vars,target){
 }
 
 temperature <- function(pk,pkmax){
-  return(pkmax-pk+1)
+  
+  tk <- pk/pkmax
+  
+  return(0.07/(tk+0.07))
 }
 
-neighbour <- function(param,pOvec,pMvec){
+neighbour <- function(param,pOvec,pMvec,bparam){
   
   neipar <- param
   
-  keyvec <- c(1:8)
+  keyvec <- c(1:10)
   
   rmidx <- vector()
   
@@ -395,9 +404,15 @@ neighbour <- function(param,pOvec,pMvec){
   }else if(key==7){
     neipar$oidx <- neipar$oidx - 1
     neipar$midx <- neipar$midx + 1
-  }else{ # key==8
+  }else if(key==8){
     neipar$oidx <- neipar$oidx - 1
     neipar$midx <- neipar$midx - 1
+  }else if(key==9){
+    neipar$oidx <- sample(c(1:pOvec))
+    neipar$midx <- sample(c(1:pMvec))
+  }else{#key==10
+    neipar$oidx <- bparam$oidx
+    neipar$midx <- bparam$midx
   }
   
   neipar$orig <- pOvec[neipar$oidx]

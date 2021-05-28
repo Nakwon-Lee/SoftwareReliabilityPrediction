@@ -177,68 +177,19 @@ setting1LOO <- function(goflist,ngoflist,
 setting111LOO <- function(goflist,
                         gofregvec,
                         totpert,
-                        targets,
-                        measures,isFCTBF,
+                        target,
+                        measure,
                         fntrain,fnpredict){
   
-  numtestingcases <-  length(goflist) * totpert
-  
-  csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases, ncol = (length(measures)*2))
-  
-  nmeasures <- paste0("R",measures)
-  
-  for (i in 1:length(goflist)){
-    cat(" ",i)
-    
-    picked <- i
-    
-    trainsetlist <- goflist[-picked]
-    
-    trainset <- trainsetlist[[1]]
-    for(j in 2:length(trainsetlist)){
-      trainset <- rbind(trainset,trainsetlist[[j]])
-    }
-    testset <- goflist[[picked]]
-    
-    for (j in 1:totpert) {
-      currpert <- paste0("P",as.character((10-totpert-1)+j))
-      
-      trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,targets)]
-      testsetsub <- testset[testset$Pert==currpert,]
-      
-      for (k in 1:length(measures)) {
-        
-        rpartEP <- fntrain(trainsetsub,gofregvec,targets[k])
-        
-        selectionEPret <- fnpredict(rpartEP,gofregvec,testsetsub)
-        
-        testcurr <- selectionEPret
-        testcurr.ordered <- testcurr[order(-testcurr$Pred,-testcurr$NMSE),]
-        
-        ngofsub <- goflist[[picked]][goflist[[picked]]$Pert==currpert,]
-        ngofsub <- ngofsub[ngofsub$Model==testcurr.ordered[1,"Model"],]
-        
-        csvmat[(((i-1)*totpert)+j),k] <- testcurr.ordered[1,measures[k]]
-        csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- ngofsub[1,nmeasures[k]]
-      }
-      
-    }
-  }
-  
-  csvdf <- data.frame(csvmat)
-  
-  names(csvdf) <- c(measures,nmeasures)
+  csvdf <- setting111LOOnoout(goflist = goflist,gofregvec = gofregvec,
+                              totpert = totpert,target = target,
+                              measure = measure,
+                              fntrain = fntrain,fnpredict = fnpredict)
   
   print(" ")
   print("setting111")
-  
-  for (i in 1:length(measures)) {
-    prefix <- paste0(measures[i]," Avg.: ")
-    print(c(prefix,median(csvdf[,measures[i]])))
-    prefix <- paste0(nmeasures[i]," Avg.: ")
-    print(c(prefix,median(csvdf[,nmeasures[i]])))
-  }
+  prefix <- paste0(measure," Median.: ")
+  print(c(prefix,median(csvdf[,measure])))
   
   return(csvdf)
 }
@@ -246,16 +197,12 @@ setting111LOO <- function(goflist,
 setting111LOOnoout <- function(goflist,
                           gofregvec,
                           totpert,
-                          targets,
-                          measures,isFCTBF,
+                          target,
+                          measure,
                           fntrain,fnpredict){
   
-  numtestingcases <-  length(goflist) * totpert
-  
-  csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases, ncol = (length(measures)*2))
-  
-  nmeasures <- paste0("R",measures)
+  resultvec <- vector()
+  selvec <- vector()
   
   for (i in 1:length(goflist)){
     
@@ -272,31 +219,23 @@ setting111LOOnoout <- function(goflist,
     for (j in 1:totpert) {
       currpert <- paste0("P",as.character((10-totpert-1)+j))
       
-      trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,targets)]
+      trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,target)]
       testsetsub <- testset[testset$Pert==currpert,]
       
-      for (k in 1:length(measures)) {
-        
-        rpartEP <- fntrain(trainsetsub,gofregvec,targets[k])
-        
-        selectionEPret <- fnpredict(rpartEP,gofregvec,testsetsub)
-        
-        testcurr <- selectionEPret
-        testcurr.ordered <- testcurr[order(-testcurr$Pred,-testcurr$NMSE),]
-        
-        ngofsub <- goflist[[picked]][goflist[[picked]]$Pert==currpert,]
-        ngofsub <- ngofsub[ngofsub$Model==testcurr.ordered[1,"Model"],]
-        
-        csvmat[(((i-1)*totpert)+j),k] <- testcurr.ordered[1,measures[k]]
-        csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- ngofsub[1,nmeasures[k]]
-      }
+      rpartEP <- fntrain(trainsetsub,gofregvec,target)
+      selectionEPret <- fnpredict(rpartEP,gofregvec,testsetsub)
       
+      testcurr <- selectionEPret
+      testcurr.ordered <- testcurr[order(-testcurr$Pred,-testcurr$NMSE),]
+      
+      resultvec[(length(resultvec)+1)] <- testcurr.ordered[1,measure]
+      selvec[(length(selvec)+1)] <- testcurr.ordered[1,"Model"]
     }
   }
   
-  csvdf <- data.frame(csvmat)
+  csvdf <- data.frame(resultvec)
   
-  names(csvdf) <- c(measures,nmeasures)
+  names(csvdf) <- c(measure)
   
   return(csvdf)
 }
@@ -316,9 +255,9 @@ execGOF111 <- function(goflist,
   models <- list()
   for (j in 1:totpert) {
     currpert <- paste0("P",as.character((10-totpert-1)+j))
-    trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,ptarget)]
+    trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,paste0("N",ptarget))]
     
-    models[[j]] <- fntrain(trainsetsub,gofregvec,ptarget)
+    models[[j]] <- fntrain(trainsetsub,gofregvec,paste0("N",ptarget))
   }
   
   selectionEPret <- list()
@@ -347,42 +286,42 @@ execGOF111 <- function(goflist,
   return(selectionEPret)
 }
 
-setting111testdata <- function(goflist,ngoflist,
-                               gofregvec,
-                               totpert,
-                               targets,
-                               measures,isFCTBF,
-                               fntrain,fnpredict){
-  
-  numtestingcases <-  length(goflist) * totpert
-  
-  csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases, ncol = (length(measures)*2))
-  
-  csvdf <- NULL
-  
-  trainsetlist <- goflist
-  
-  trainset <- trainsetlist[[1]]
-  for(j in 2:length(trainsetlist)){
-    trainset <- rbind(trainset,trainsetlist[[j]])
-  }
-  
-  for (i in 1:length(goflist)){
-    for (j in 1:totpert) {
-      currpert <- paste0("P",as.character((10-totpert-1)+j))
-    }
-  }
-  
-  for (k in 1:length(measures)) {
-    rpartEP <- fntrain(trainset,gofregvec,targets[k])
-    selectionEPret <- fnpredict(rpartEP,gofregvec,trainset)
-    
-    if(is.null(csvdf)){
-      csvdf <- data.frame(selectionEPret$Pred)
-    }
-  }
-}
+# setting111testdata <- function(goflist,ngoflist,
+#                                gofregvec,
+#                                totpert,
+#                                targets,
+#                                measures,isFCTBF,
+#                                fntrain,fnpredict){
+#   
+#   numtestingcases <-  length(goflist) * totpert
+#   
+#   csvmat <- NULL
+#   csvmat <- matrix(nrow = numtestingcases, ncol = (length(measures)*2))
+#   
+#   csvdf <- NULL
+#   
+#   trainsetlist <- goflist
+#   
+#   trainset <- trainsetlist[[1]]
+#   for(j in 2:length(trainsetlist)){
+#     trainset <- rbind(trainset,trainsetlist[[j]])
+#   }
+#   
+#   for (i in 1:length(goflist)){
+#     for (j in 1:totpert) {
+#       currpert <- paste0("P",as.character((10-totpert-1)+j))
+#     }
+#   }
+#   
+#   for (k in 1:length(measures)) {
+#     rpartEP <- fntrain(trainset,gofregvec,targets[k])
+#     selectionEPret <- fnpredict(rpartEP,gofregvec,trainset)
+#     
+#     if(is.null(csvdf)){
+#       csvdf <- data.frame(selectionEPret$Pred)
+#     }
+#   }
+# }
 
 
 # setting2 Leave-one-out wrapper
