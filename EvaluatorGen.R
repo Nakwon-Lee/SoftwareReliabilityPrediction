@@ -8,8 +8,8 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
   goflret <- pgofres
   if(is.null(goflret)){
     goflret <- setting111LOOnoout(goflist = plist, gofregvec = regvars,
-                                  totpert = ppert,targets = paste0("N",pcri),
-                                  measures = pcri,isFCTBF = "FC",
+                                  totpert = ppert,target = paste0("N",pcri),
+                                  measure = pcri,
                                   fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
   }
   
@@ -32,8 +32,8 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
   gofsubretlist <- list()
   for (i in 1:length(plist)) {
     gofsubretlist[[i]] <- setting111LOOnoout(goflist = plist[-i], gofregvec = regvars,
-                                          totpert = ppert,targets = paste0("N",pcri),
-                                          measures = pcri,isFCTBF = "FC",
+                                          totpert = ppert,target = paste0("N",pcri),
+                                          measure = pcri,
                                           fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
   }
   
