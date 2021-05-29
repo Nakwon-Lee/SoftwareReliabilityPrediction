@@ -2,7 +2,7 @@ rm(list = ls())
 ls()
 
 library(smotefamily)
-library(DMwR)
+# library(DMwR)
 library(minpack.lm)
 library(rpart)
 library(nls2)
@@ -17,7 +17,7 @@ library(RWekajars)
 library(MASS)
 library(pls)
 library(mgcv)
-library(car)
+# library(car)
 library(FSelector)
 
 setwd('~/git/SoftwareReliabilityPrediction')
@@ -35,7 +35,7 @@ source('Misc.R')
 
 Msted <- c(1:4)
   
-thisprefix <- "evaluator.CV/NoSMOTE.100.CFS/envQ1aug"
+thisprefix <- "./"
 
 for (Mkey in Msted) {
   settingDGSEvalGensep(pkey = Mkey,
