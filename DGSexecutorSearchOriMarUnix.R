@@ -35,8 +35,6 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-setting7retFCD <- settingDDM(vFCDGofDDMlist,vFCDGofNlist,vtotpert,vCriVec)
-
 searchedEvaluator <- searchforEvaluator(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
                                         regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
                                         ppert = vtotpert,pcri = vCriVec[1],pddmres = setting7retFCD,pgofres = setting111retFCD,
