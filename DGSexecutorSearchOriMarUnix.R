@@ -35,19 +35,17 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-searchedEvaluator <- searchforEvaluator(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
-                                        regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
-                                        ppert = vtotpert,pcri = vCriVec[1],pddmres = setting7retFCD,pgofres = setting111retFCD,
-                                        pgofddmlist = vFCDGofDDMlist,
-                                        goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
-                                        metafeats = vNRMetaVec)
-save(searchedEvaluator,file = paste0('envQ1aug.evalFull.',vCriVec[1],'.RData'))
+arguments <- commandArgs(trailingOnly = TRUE)
 
-searchedEvaluator <- searchforEvaluator(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
-                                        regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
-                                        ppert = vtotpert,pcri = vCriVec[2],pddmres = setting7retFCD,pgofres = setting111retFCD,
-                                        pgofddmlist = vFCDGofDDMlist,
-                                        goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
-                                        metafeats = vNRMetaVec)
-save(searchedEvaluator,file = paste0('envQ1aug.evalFull.',vCriVec[2],'.RData'))
+searchedEvaluator <- list()
 
+for (i in 1:length(vCriVec)) {
+  searchedEvaluator[[vCriVec[i]]] <- searchforEvaluator(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
+                                                        regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
+                                                        ppert = vtotpert,pcri = vCriVec[i],pddmres = setting7retFCD,pgofres = setting111retFCD,
+                                                        pgofddmlist = vFCDGofDDMlist,
+                                                        goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
+                                                        metafeats = vNRMetaVec,
+                                                        pkmax = as.interger(arguments[1]))
+  save(searchedEvaluator,file = paste0('envQ1aug.evalFull.',arguments[1],'.RData'))
+}

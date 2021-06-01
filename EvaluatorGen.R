@@ -1,9 +1,13 @@
 searchforEvaluator <- function(plist,pnlist,pmetalist,
                                regvars,ppert,pcri,pddmres=NULL,pgofres=NULL,
                                pfulldf=NULL,pfullfeats=NULL,pgofddmlist,
-                               goffeats,metafeats){
+                               goffeats,metafeats,
+                               pkmax = NULL){
   
-  kmax <- 100
+  kmax <- pkmax
+  if(is.null(kmax)){
+    kmax <- 300
+  }
   
   goflret <- pgofres
   if(is.null(goflret)){
@@ -319,25 +323,39 @@ filteringLabeler <- function(xax,yax,porimar){
 
 featureSelection <- function(ptrain,pfts,pcri){
   
-  tablenames <- names(table(ptrain[,paste0("DGS.SEL.",pcri)]))
+  # tablenames <- names(table(ptrain[,paste0("DGS.SEL.",pcri)]))
+  # 
+  # retfts <- NULL
+  # if(length(tablenames)==2){
+  #   tform <- as.simple.formula(pfts,paste0("DGS.SEL.",pcri))
+  #   retfts <- FSelector::cfs(tform,ptrain)
+  # }else{
+  #   retfts <- pfts
+  #   key <- TRUE
+  #   while(key){
+  #     tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
+  #     retvif <- regclass::VIF(tmodel)
+  #     if (length(which(retvif>10))>0){
+  #       vartorm <- names(retvif)[which.max(retvif)]
+  #       idxtorm <- which(retfts==vartorm)
+  #       retfts <- retfts[-idxtorm]
+  #     }else{
+  #       key <- FALSE
+  #     }
+  #   }
+  # }
   
-  retfts <- NULL
-  if(length(tablenames)==2){
-    tform <- as.simple.formula(pfts,paste0("DGS.SEL.",pcri))
-    retfts <- FSelector::cfs(tform,ptrain)
-  }else{
-    retfts <- pfts
-    key <- TRUE
-    while(key){
-      tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
-      retvif <- regclass::VIF(tmodel)
-      if (length(which(retvif>10))>0){
-        vartorm <- names(retvif)[which.max(retvif)]
-        idxtorm <- which(retfts==vartorm)
-        retfts <- retfts[-idxtorm]
-      }else{
-        key <- FALSE
-      }
+  retfts <- pfts
+  key <- TRUE
+  while(key){
+    tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
+    retvif <- regclass::VIF(tmodel)
+    if (length(which(retvif>10))>0){
+      vartorm <- names(retvif)[which.max(retvif)]
+      idxtorm <- which(retfts==vartorm)
+      retfts <- retfts[-idxtorm]
+    }else{
+      key <- FALSE
     }
   }
   
