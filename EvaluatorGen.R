@@ -1,6 +1,6 @@
 searchforEvaluator <- function(plist,pnlist,pmetalist,
                                regvars,ppert,pcri,pddmres=NULL,pgofres=NULL,
-                               pfulldf,pfullfeats,pgofddmlist,
+                               pfulldf=NULL,pfullfeats=NULL,pgofddmlist,
                                goffeats,metafeats){
   
   kmax <- 100
@@ -24,9 +24,9 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
   margvec <- sort(abs(ygof-xddm))
   
   param <- list()
-  param$oidx <- ceiling(length(origvec)/4)
+  param$oidx <- 1
   param$orig <- origvec[param$oidx]
-  param$midx <- ceiling(length(margvec)/4)
+  param$midx <- 1
   param$margin <- margvec[param$midx]
   
   gofsubretlist <- list()
@@ -58,6 +58,7 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
                         param = currpar,goffeats = goffeats,metafeats = metafeats,
                         pcache = cricache)
   cricache <- currcri$cache
+  
   bestpar <- currpar
   bestcri <- currcri$val
 
@@ -65,9 +66,8 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
     
     cat(".")
     
-    preddf <- NULL
     temP <- temperature(pk = k,pkmax = kmax)
-    newpar <- neighbour(param = currpar,pOvec = origvec,pMvec = margvec,bestpar)
+    newpar <- neighbour(param = currpar,pOvec = origvec,pMvec = margvec,bparam = bestpar)
     
     newcri <- Evaluation(plist = plist,ppert = ppert,
                          pgofddmlist = pgofddmlist,pnlist = pnlist,pmetalist = pmetalist,
@@ -93,31 +93,36 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
   # end of the search: "bestpar" is the searched parameter for evaluator generation
   # after the search, we generate evaluator using the searched parameter (i.e., origin and margin)
   
-  # metafulldf <- NULL
-  # for (i in 1:length(pmetalist)) {
-  #   if(is.null(metafulldf)){
-  #     metafulldf <- pmetalist[[i]]
-  #   }else{
-  #     metafulldf <- rbind(metafulldf,pmetalist[[i]])
-  #   }
-  # }
-  # metafullndf <- normalization(metafulldf,metafts)$df
-  # 
-  # goffulldf <- NULL
-  # for (i in 1:length(pgofddmlist)) {
-  #   if(is.null(goffulldf)){
-  #     goffulldf <- pgofddmlist[[i]]
-  #   }else{
-  #     goffulldf <- rbind(goffulldf,pgofddmlist[[i]])
-  #   }
-  # }
-  # goffulldf <- goffulldf[goffulldf$Model=="SVR",]
-  # 
-  # fulldf <- cbind(metafullndf,goffulldf)
-  # fullfeat <- c(goffts,paste0("N",metafts))
+  fulldf <- pfulldf
+  fullfeat <- pfullfeats
+  
+  if(is.null(fulldf)){
+    metafulldf <- NULL
+    for (i in 1:length(pmetalist)) {
+      if(is.null(metafulldf)){
+        metafulldf <- pmetalist[[i]]
+      }else{
+        metafulldf <- rbind(metafulldf,pmetalist[[i]])
+      }
+    }
+    metafullndf <- normalization(metafulldf,metafeats)$df
+    
+    goffulldf <- NULL
+    for (i in 1:length(pgofddmlist)) {
+      if(is.null(goffulldf)){
+        goffulldf <- pgofddmlist[[i]]
+      }else{
+        goffulldf <- rbind(goffulldf,pgofddmlist[[i]])
+      }
+    }
+    goffulldf <- goffulldf[goffulldf$Model=="SVR",]
+    
+    fulldf <- cbind(metafullndf,goffulldf)
+    fullfeat <- c(goffeats,paste0("N",metafeats))
+  }
   
   evalter <- DDMevaluatorGen(pddmres = ddmret,pgofres = goflret,
-                             pfulldf = pfulldf,pfullfeats = pfullfeats,
+                             pfulldf = fulldf,pfullfeats = fullfeat,
                              orimar = bestpar,pcri = pcri)
   
   evalter$orimar <- bestpar
@@ -249,10 +254,10 @@ DDMevaluatorGen <- function(pddmres,pgofres,
     fulldf[paste0("DGS.SEL.",pcri)] <- as.factor(filteringLabeler(pddmres[,pcri],pgofres[,pcri],param))
   }
   
-  traindf <- fulldf[,c(pfullfeats,paste0("DGS.SEL.",pcri))]
+  traindf <- fulldf[,c(fullfeat,paste0("DGS.SEL.",pcri))]
   traindfsub <- na.omit(traindf)
   
-  traindfsub[paste0("DGS.SEL.BIN.",pcri)] <- ifelse(traindfsub[paste0("DGS.SEL.",pcri)]=="DDM",1,0)
+  traindfsub[paste0("DGS.SEL.BIN.",pcri)] <- ifelse(traindfsub[,paste0("DGS.SEL.",pcri)]=="DDM",1,0)
   
   fullfeat <- featureSelection(ptrain = traindfsub,pfts = fullfeat,pcri = pcri)
   
@@ -261,8 +266,8 @@ DDMevaluatorGen <- function(pddmres,pgofres,
   
   classifier <- setting1traincl(traindfsub,fullfeat,paste0("DGS.SEL.",pcri))
   
-  testidf <- fulldf[,c(pfullfeats,paste0("DGS.SEL.",pcri))]
-  predretdf <- setting1predictcl(classifier,fullfeat,testidf)
+  predretdf <- setting1predictcl(classifier,fullfeat,fulldf)
+  
   fulldf[paste0("DGS.PRD.",pcri)] <- predretdf$Pred
   
   ccc <- length(which(fulldf[paste0("DGS.PRD.",pcri)]==fulldf[paste0("DGS.SEL.",pcri)]))
@@ -314,23 +319,27 @@ filteringLabeler <- function(xax,yax,porimar){
 
 featureSelection <- function(ptrain,pfts,pcri){
   
-  tform <- as.simple.formula(pfts,pcri)
+  tablenames <- names(table(ptrain[,paste0("DGS.SEL.",pcri)]))
   
-  retfts <- FSelector::cfs(tform,ptrain)
-  
-  # retfts <- pfts
-  # key <- TRUE
-  # while(key){
-  #   tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
-  #   retvif <- car::vif(tmodel)
-  #   if (length(which(retvif>10))>0){
-  #     vartorm <- names(retvif)[which.max(retvif)]
-  #     idxtorm <- which(retfts==vartorm)
-  #     retfts <- retfts[-idxtorm]
-  #   }else{
-  #     key <- FALSE
-  #   }
-  # }
+  retfts <- NULL
+  if(length(tablenames)==2){
+    tform <- as.simple.formula(pfts,paste0("DGS.SEL.",pcri))
+    retfts <- FSelector::cfs(tform,ptrain)
+  }else{
+    retfts <- pfts
+    key <- TRUE
+    while(key){
+      tmodel <- temptrain(ptrain,retfts,paste0("DGS.SEL.BIN.",pcri))
+      retvif <- regclass::VIF(tmodel)
+      if (length(which(retvif>10))>0){
+        vartorm <- names(retvif)[which.max(retvif)]
+        idxtorm <- which(retfts==vartorm)
+        retfts <- retfts[-idxtorm]
+      }else{
+        key <- FALSE
+      }
+    }
+  }
   
   return(retfts)
 }
@@ -362,17 +371,20 @@ neighbour <- function(param,pOvec,pMvec,bparam){
   
   neipar <- param
   
+  ovecrange <- c(1:floor(length(pOvec)/2))
+  mvecrange <- c(1:floor((length(pMvec)*3)/4))
+  
   keyvec <- c(1:10)
   
   rmidx <- vector()
   
-  if(neipar$oidx==length(pOvec)){
+  if(neipar$oidx==ovecrange[length(ovecrange)]){
     rmidx <- c(rmidx,c(1,5,6))
   }
   if(neipar$oidx==1){
     rmidx <- c(rmidx,c(2,7,8))
   }
-  if(neipar$midx==length(pMvec)){
+  if(neipar$midx==mvecrange[length(mvecrange)]){
     rmidx <- c(rmidx,c(3,5,7))
   }
   if(neipar$midx==1){
@@ -408,8 +420,8 @@ neighbour <- function(param,pOvec,pMvec,bparam){
     neipar$oidx <- neipar$oidx - 1
     neipar$midx <- neipar$midx - 1
   }else if(key==9){
-    neipar$oidx <- sample(c(1:pOvec))
-    neipar$midx <- sample(c(1:pMvec))
+    neipar$oidx <- sample(ovecrange,size = 1)
+    neipar$midx <- sample(mvecrange,size = 1)
   }else{#key==10
     neipar$oidx <- bparam$oidx
     neipar$midx <- bparam$midx
@@ -437,7 +449,15 @@ Evaluation <- function(plist,ppert,pgofddmlist,
                        param,goffeats,metafeats,
                        pcache){
   
-  if (is.null(pcache[[paste0(param$oidx,".",param$midx)]])){
+  isHit <- any(paste0(param$oidx,".",param$midx) %in% names(pcache))
+  
+  if (isHit){
+    ret <- list()
+    ret$val <- pcache[[paste0(param$oidx,".",param$midx)]]
+    ret$cache <- pcache
+    
+    return(ret)
+  }else{
     resultvec <- vector()
     
     for (i in 1:length(plist)) {
@@ -476,57 +496,6 @@ Evaluation <- function(plist,ppert,pgofddmlist,
     ret <- list()
     ret$val <- median(retdf[,pcri])
     pcache[[paste0(param$oidx,".",param$midx)]] <- median(retdf[,pcri])
-    ret$cache <- pcache
-    
-    return(ret)
-  }else{
-    ret <- list()
-    ret$val <- pcache[[paste0(param$oidx,".",param$midx)]]
-    ret$cache <- pcache
-    
-    return(ret)
-  }
-}
-
-EvaluationNoCV <- function(plist,ppert,metafullndf,pgofddmlist,pnlist,
-                           pmetalist,regvars,pcri,ddmret,goflret,gofretlist = NULL,
-                           param,goffeats,metafeats,
-                           pcache){
-  
-  if (is.null(pcache[[paste0(param$oidx,".",param$midx)]])){
-    teval <- DDMevaluatorGen(plist = plist,pnlist = pnlist,pmetalist = pmetalist,
-                              regvars = regvars,ppert = ppert,pcri = pcri,
-                              pddmres = ddmret,pgofres = goflret,orimar = param,pgofddmlist = pgofddmlist,
-                              goffeats = goffeats,metafeats = metafeats)
-    
-    goffulldf <- NULL
-    for (i in 1:length(pnlist)) {
-      if(is.null(goffulldf)){
-        goffulldf <- pnlist[[i]]
-      }else{
-        goffulldf <- rbind(goffulldf,pnlist[[i]])
-      }
-    }
-    goffulldf <- goffulldf[goffulldf$Model=="SVR",]
-    
-    ftsdf <- cbind(goffulldf,metafullndf)
-    
-    #classification
-    preddf <- setting1predictcl(teval$evaluator,teval$fts,ftsdf)
-    DGSret <- ifelse(preddf$Pred=="DDM",ddmret[,pcri],goflret[,pcri])
-    retdf <- NULL
-    retdf <- data.frame(DGSret)
-    colnames(retdf) <- pcri
-    
-    ret <- list()
-    ret$val <- median(retdf[,pcri])
-    pcache[[paste0(param$oidx,".",param$midx)]] <- median(retdf[,pcri])
-    ret$cache <- pcache
-    
-    return(ret)
-  }else{
-    ret <- list()
-    ret$val <- pcache[[paste0(param$oidx,".",param$midx)]]
     ret$cache <- pcache
     
     return(ret)

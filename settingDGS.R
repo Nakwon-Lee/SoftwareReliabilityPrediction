@@ -44,6 +44,55 @@ settingDGS <- function(goflist,gofnlist,gofddmlist,
   return(retdf)
 }
 
+settingDGSsepPert <- function(goflist,gofnlist,gofddmlist,
+                              metadf,pcri,totpert,
+                              goffts,metafts){
+  resultvec <- vector()
+  
+  for (m in 1:totpert) {
+    
+  }
+  
+  for (i in 1:length(goflist)) {
+    cat(paste0(i," "))
+    
+    picked <- c(i)
+    
+    DGSretdf <- execDGS(goflist = goflist[-picked],gofnlist = gofnlist[-picked],
+                        gofddmlist = gofddmlist[-picked],metadf = metadf[-picked],
+                        pcri = pcri,totpert = totpert,
+                        goffts = goffts,metafts = metafts,
+                        psearch = "SEARCH",
+                        tmetadf = metadf[picked],tgofddmlist = gofddmlist[picked],
+                        tgoflist = goflist[picked])
+    
+    for (j in 1:length(picked)) {
+      testirows <- c(1:totpert)
+      testirows <- testirows + (totpert * (j-1))
+      
+      temdgsret <- DGSretdf[testirows,]
+      
+      for (k in 1:nrow(temdgsret)) {
+        if (temdgsret[k,paste0("DGS.RET.",pcri)]=="DDM"){
+          trows <- which(gofddmlist[[picked[j]]]$Model=="SVR" & gofddmlist[[picked[j]]]$Pert==temdgsret[k,"Pert"])
+          resultvec[(length(resultvec)+1)] <- gofddmlist[[picked[j]]][trows,][1,pcri]
+        }else{
+          trows <- which(goflist[[picked[j]]]$Pert==temdgsret[k,"Pert"])
+          tgofdf <- goflist[[picked[j]]][trows,]
+          resultvec[(length(resultvec)+1)] <- tgofdf[tgofdf$Model==temdgsret[k,paste0("DGS.RET.",pcri)],][1,pcri]
+        }
+      }
+    }
+  }
+  
+  retdf <- data.frame(resultvec)
+  colnames(retdf) <- c(pcri)
+  
+  print(c(pcri,median(retdf[,pcri])))
+  
+  return(retdf)
+}
+
 # settingDGStest <- function(goflist,gofnlist,gofddmlist,
 #                        metadf,pcri,totpert,
 #                        goffts,metafts,
@@ -496,6 +545,8 @@ execDGSEvaluatorGen <- function(pgofldf=NULL,pddmodf=NULL,goflist,
                                 pgofddmlist = gofddmlist, goffeats = goffts,metafeats = metafts,
                                 pddmres = ddmret,pgofres = goflret,
                                 pfulldf = fulldf,pfullfeats = fullfeat)
+  
+  print(ddmeval$fts)
   
   save(ddmeval,file = givenevalfile)
 }

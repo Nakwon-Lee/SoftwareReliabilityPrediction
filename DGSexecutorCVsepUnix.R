@@ -17,7 +17,7 @@ library(RWekajars)
 library(MASS)
 library(pls)
 library(mgcv)
-# library(car)
+library(regclass)
 library(FSelector)
 
 setwd('~/git/SoftwareReliabilityPrediction')
@@ -33,9 +33,11 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-Msted <- c(1:4)
+arguments <- commandArgs(trailingOnly = TRUE)
+
+Msted <- c(as.interger(arguments[1]):as.interger(arguments[2]))
   
-thisprefix <- "./"
+thisprefix <- arguments[3]
 
 for (Mkey in Msted) {
   settingDGSEvalGensep(pkey = Mkey,

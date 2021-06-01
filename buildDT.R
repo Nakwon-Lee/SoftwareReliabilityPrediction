@@ -13,7 +13,7 @@ setting1traincl <- function(ptrain,vars,target){
   
   # adtmodel <- best.svm(targetformula,data=ptrain)
   
-  adtmodel <- best.rpart(targetformula,data=ptrain)
+  adtmodel <- rpart(targetformula,data=ptrain)
   
   # adtmodel <- best.randomForest(targetformula,data=ptrain)
   
@@ -59,7 +59,7 @@ setting1predictcl <- function(fittedtree,pvec,df){
   retbest <- NULL
   
   for(i in 1:nrow(df)){
-    temp <- predict(fittedtree,df[i,pvec],type="class")
+    temp <- predict(fittedtree,df[i,],type="class")
     df[i,"Pred"] <- temp[1]
   }
   
