@@ -37,6 +37,8 @@ source('Misc.R')
 
 arguments <- commandArgs(trailingOnly = TRUE)
 
+print(arguments)
+
 searchedEvaluator <- list()
 
 for (i in 1:length(vCriVec)) {
