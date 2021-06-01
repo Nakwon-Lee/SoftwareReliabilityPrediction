@@ -6,8 +6,10 @@ searchforEvaluator <- function(plist,pnlist,pmetalist,
   
   kmax <- pkmax
   if(is.null(kmax)){
-    kmax <- 300
+    kmax <- 100
   }
+  
+  print(kmax)
   
   goflret <- pgofres
   if(is.null(goflret)){
