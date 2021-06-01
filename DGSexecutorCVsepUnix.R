@@ -35,7 +35,7 @@ source('Misc.R')
 
 arguments <- commandArgs(trailingOnly = TRUE)
 
-Msted <- c(as.interger(arguments[1]):as.interger(arguments[2]))
+Msted <- c(as.integer(arguments[1]):as.integer(arguments[2]))
   
 thisprefix <- arguments[3]
 

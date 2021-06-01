@@ -46,6 +46,6 @@ for (i in 1:length(vCriVec)) {
                                                         pgofddmlist = vFCDGofDDMlist,
                                                         goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                         metafeats = vNRMetaVec,
-                                                        pkmax = as.interger(arguments[1]))
+                                                        pkmax = as.integer(arguments[1]))
   save(searchedEvaluator,file = paste0('envQ1aug.evalFull.',arguments[1],'.RData'))
 }
