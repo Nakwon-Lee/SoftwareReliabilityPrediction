@@ -55,6 +55,33 @@ temptrain <- function(ptrain,vars,target){
   return(adtmodel)
 }
 
+settingDGStraincl <- function(ptrain,vars,target){
+  right <- vars[1]
+  if(length(vars)>1){
+    for (i in 2:length(vars)){
+      right <- paste0(right,"+",vars[i])
+    }
+  }
+  
+  targetformula <- as.formula(paste0(target,"~",right))
+  
+  # ADTree <- make_Weka_classifier("weka/classifiers/trees/ADTree")
+  # adtmodel <- ADTree(targetformula,data=ptrain)
+  
+  # adtmodel <- best.svm(targetformula,data=ptrain)
+  
+  adtmodel <- rpart(targetformula,data=ptrain)
+  
+  # adtmodel <- best.randomForest(targetformula,data=ptrain)
+  
+  # adtmodel <- lm(targetformula,data=ptrain)
+  
+  # REPTree <- make_Weka_classifier("weka/classifiers/trees/REPTree")
+  # adtmodel <- REPTree(targetformula,data=ptrain)
+  
+  return(adtmodel)
+}
+
 setting1predictcl <- function(fittedtree,pvec,df){
   retbest <- NULL
   

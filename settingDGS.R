@@ -183,11 +183,18 @@ settingDGSsavedEvaluator <- function(goflist,gofnlist,gofddmlist,
 
 settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                                      metadf,pcri,totpert,
-                                     goffts,metafts){
+                                     goffts,metafts,
+                                 givenfile = NULL){
+  param <- NULL
   
-  param <- list()
-  param$orig <- 1
-  param$margin <- 1
+  if(is.null(givenfile)){
+    param <- list()
+    param$orig <- 1
+    param$margin <- 1
+  }else{
+    load(givenfile,envir = environment())
+    param <- searchedEvaluator[[pcri]]$param
+  }
   
   resultvec <- vector()
   
@@ -367,7 +374,7 @@ execDGS <- function(pgofldf=NULL,pddmodf=NULL,ptgofdf = NULL,
                     gofnlist,gofddmlist,metadf,
                     pcri,totpert,goffts,metafts,
                     givenevalfile=NULL,psearch=NULL,
-                    givenparam=NULL,
+                    givenparam=NULL,givenfts=NULL,
                     tmetadf,tgofddmlist,tgoflist){
   
   goflret <- pgofldf
@@ -425,7 +432,7 @@ execDGS <- function(pgofldf=NULL,pddmodf=NULL,ptgofdf = NULL,
     }else if(psearch=="GIVEN"){
       ddmeval <- DDMevaluatorGen(pddmres = ddmret,pgofres = goflret,
                                  pfulldf = fulldf,pfullfeats = fullfeat,
-                                 orimar = givenparam,
+                                 orimar = givenparam,pselfts = givenfts,
                                  pcri = pcri)
     }else if(psearch=="DIRECT"){
       xddm <- log2(ddmret[,pcri])

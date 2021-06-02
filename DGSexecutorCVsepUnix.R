@@ -33,7 +33,7 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-arguments <- commandArgs(trailingOnly = TRUE)
+arguments <- commandArgs()
 
 Msted <- c(as.integer(arguments[1]):as.integer(arguments[2]))
   
