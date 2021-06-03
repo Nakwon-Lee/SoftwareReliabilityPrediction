@@ -55,7 +55,7 @@ for (i in 1:length(vCriVec)) {
                                                    pgofddmlist = vFCDGofDDMlist,
                                                    goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                    metafeats = vNRMetaVec,
-                                                   pparam = searchedEvaluator[[vCriVec[i]]],
+                                                   pparam = searchedEvaluator[[vCriVec[i]]]$param,
                                                    gaparam = gaparam)
   save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.',arguments[1],'.',arguments[2],'.RData'))
 }
