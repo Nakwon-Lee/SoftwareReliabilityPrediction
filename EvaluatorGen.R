@@ -247,7 +247,8 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
                               pfulldf=NULL,pfullfeats=NULL,pgofddmlist,
                               goffeats,metafeats,
                               pkmax = NULL,
-                              pparam = NULL,gaparam = NULL){
+                              pparam = NULL,gaparam = NULL,
+                              pparallel='seq'){
   
   kmax <- pkmax
   if(is.null(kmax)){
@@ -337,12 +338,22 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
   
   print('GA start!')
   
-  if(is.null(gaparam)){
-    GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
-                popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
-  }else{
-    GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
-                popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE)
+  if(pparallel=='seq'){
+    if(is.null(gaparam)){
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
+    }else{
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE)
+    }
+  }else if(pparallel=='par'){
+    if(is.null(gaparam)){
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = 20,maxiter = 100,run = 100,keepBest = TRUE,parallel = TRUE)
+    }else{
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE,parallel = TRUE)
+    }
   }
   
   print(GAret@bestSol)
