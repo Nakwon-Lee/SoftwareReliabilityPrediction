@@ -38,6 +38,10 @@ source('Misc.R')
 
 load('evaluator.CV/NoSMOTE.SAv2.VIF.FULL/envQ1aug.evalFull.1000.RData')
 
+gaparam <- list()
+gaparam$popsize <- 20
+gaparam$miter <- 50
+
 searchedFeats <- list()
 
 for (i in 1:length(vCriVec)) {
@@ -47,6 +51,7 @@ for (i in 1:length(vCriVec)) {
                                                         pgofddmlist = vFCDGofDDMlist,
                                                         goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                         metafeats = vNRMetaVec,
-                                                   pparam = searchedEvaluator[[vCriVec[i]]]$param)
+                                                   pparam = searchedEvaluator[[vCriVec[i]]]$param,
+                                                   gaparam = gaparam)
   save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.RData'))
 }

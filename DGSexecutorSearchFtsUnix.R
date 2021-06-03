@@ -48,29 +48,26 @@ print(gaparam)
 load('evaluator.CV/NoSMOTE.SAv2.VIF.FULL/envQ1aug.evalFull.1000.RData')
 
 searchedFeats <- list()
-
-for (i in 1:length(vCriVec)) {
   
-  if(arguments[3]=='P'){
-    print('Parallel')
-    searchedFeats[[vCriVec[i]]] <- searchforFeatures(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
-                                                     regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
-                                                     ppert = vtotpert,pcri = vCriVec[i],pddmres = setting7retFCD,pgofres = setting111retFCD,
-                                                     pgofddmlist = vFCDGofDDMlist,
-                                                     goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
-                                                     metafeats = vNRMetaVec,
-                                                     pparam = searchedEvaluator[[vCriVec[i]]]$param,
-                                                     gaparam = gaparam,pparallel = 'par')
-  }else{
-    print('Sequential')
-    searchedFeats[[vCriVec[i]]] <- searchforFeatures(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
-                                                     regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
-                                                     ppert = vtotpert,pcri = vCriVec[i],pddmres = setting7retFCD,pgofres = setting111retFCD,
-                                                     pgofddmlist = vFCDGofDDMlist,
-                                                     goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
-                                                     metafeats = vNRMetaVec,
-                                                     pparam = searchedEvaluator[[vCriVec[i]]]$param,
-                                                     gaparam = gaparam)
-  }
-  save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.',arguments[1],'.',arguments[2],'.RData'))
+if(arguments[3]=='P'){
+  print('Parallel')
+  searchedFeats[[arguments[4]]] <- searchforFeatures(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
+                                                   regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
+                                                   ppert = vtotpert,pcri = arguments[4],pddmres = setting7retFCD,pgofres = setting111retFCD,
+                                                   pgofddmlist = vFCDGofDDMlist,
+                                                   goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
+                                                   metafeats = vNRMetaVec,
+                                                   pparam = searchedEvaluator[[arguments[4]]]$param,
+                                                   gaparam = gaparam,pparallel = 'par')
+}else{
+  print('Sequential')
+  searchedFeats[[arguments[4]]] <- searchforFeatures(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
+                                                   regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
+                                                   ppert = vtotpert,pcri = arguments[4],pddmres = setting7retFCD,pgofres = setting111retFCD,
+                                                   pgofddmlist = vFCDGofDDMlist,
+                                                   goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
+                                                   metafeats = vNRMetaVec,
+                                                   pparam = searchedEvaluator[[arguments[4]]]$param,
+                                                   gaparam = gaparam)
 }
+save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.',arguments[1],'.',arguments[2],'.',arguments[4],'.RData'))

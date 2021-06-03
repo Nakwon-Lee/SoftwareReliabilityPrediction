@@ -356,11 +356,13 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
     }
   }
   
-  print(GAret@bestSol)
+  print(GAret@bestSol[[length(GAret@bestSol)]])
   
-  finalsol <- decimal2binary(GAret@solution)
+  finalsol <- GAret@solution
   
-  selfts <- fullfeat[which(finalsol==1)]
+  selfts <- fullfeat[c(which(finalsol==1))]
+  
+  print(selfts)
   
   fulldf <- pfulldf
   fullfeat <- pfullfeats
