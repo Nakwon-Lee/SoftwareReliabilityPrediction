@@ -35,7 +35,7 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-arguments <- commandArgs()
+arguments <- commandArgs(trailingOnly = TRUE)
 
 searchedEvaluator <- list()
 

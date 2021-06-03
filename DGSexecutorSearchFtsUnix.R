@@ -36,7 +36,7 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-arguments <- commandArgs()
+arguments <- commandArgs(trailingOnly = TRUE)
 
 gaparam <- list()
 gaparam$popsize <- as.integer(arguments[1])
