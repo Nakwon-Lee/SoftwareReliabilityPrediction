@@ -313,6 +313,10 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
   
   Fitness <- function(x){
     
+    if(binary2decimal(x)==0){
+      x <- decimal2binary(1,length = lenbits)
+    }
+    
     currfts <- fullfeat[c(which(x==1))]
     
     print(currfts)
@@ -325,17 +329,16 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
                           param = param,goffeats = goffeats,metafeats = metafeats,
                           pcache = cricache,pfts = currfts,pftnum = binary2decimal(x))
     
-    print(paste0(param$oidx,".",param$midx,'.',binary2decimal(x)))
-    
-    cricache[[paste0(param$oidx,".",param$midx,'.',binary2decimal(x))]] <- currcri$val
+    print(currcri$cache)
+    print(paste0('this fitness: ',-currcri$val))
     
     return(-currcri$val)
   }
   
   print('GA start!')
   
-  GAret <- ga(type = 'binary',fitness = Fitness,cricache,nBits = lenbits,
-              popSize = 20,maxiter = 2000,run = 100,keepBest = TRUE)
+  GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+              popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
   
   print(GAret@bestSol)
   
@@ -612,7 +615,7 @@ Evaluation <- function(plist,ppert,pgofddmlist,
                        param,goffeats,metafeats,
                        pcache,pfts = NULL,pftnum=NULL){
   
-  isHit <- NULL
+  isHit <- FALSE
   
   if(is.null(pfts)){
     isHit <- any(paste0(param$oidx,".",param$midx) %in% names(pcache))
