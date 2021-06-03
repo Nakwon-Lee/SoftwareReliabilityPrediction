@@ -247,7 +247,7 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
                               pfulldf=NULL,pfullfeats=NULL,pgofddmlist,
                               goffeats,metafeats,
                               pkmax = NULL,
-                              pparam = NULL){
+                              pparam = NULL,gaparam = NULL){
   
   kmax <- pkmax
   if(is.null(kmax)){
@@ -337,8 +337,13 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
   
   print('GA start!')
   
-  GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
-              popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
+  if(is.null(gaparam)){
+    GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
+  }else{
+    GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE)
+  }
   
   print(GAret@bestSol)
   
