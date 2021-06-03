@@ -329,13 +329,15 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
     
     cricache[[paste0(param$oidx,".",param$midx,'.',binary2decimal(x))]] <- currcri$val
     
-    return(currcri$val)
+    return(-currcri$val)
   }
   
   print('GA start!')
   
-  GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
-              popSize = 100,maxiter = 1000,run = 100)
+  GAret <- ga(type = 'binary',fitness = Fitness,cricache,nBits = lenbits,
+              popSize = 20,maxiter = 2000,run = 100,keepBest = TRUE)
+  
+  print(GAret@bestSol)
   
   finalsol <- decimal2binary(GAret@solution)
   
