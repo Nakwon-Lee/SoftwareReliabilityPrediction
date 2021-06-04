@@ -20,6 +20,7 @@ library(mgcv)
 library(regclass)
 library(FSelector)
 library(GA)
+library(parallel)
 
 setwd('D:/SR.SRGMR')
 
@@ -40,7 +41,7 @@ load('evaluator.CV/NoSMOTE.SAv2.VIF.FULL/envQ1aug.evalFull.1000.RData')
 
 gaparam <- list()
 gaparam$popsize <- 20
-gaparam$miter <- 50
+gaparam$miter <- 100
 
 searchedFeats <- list()
 
@@ -52,6 +53,6 @@ for (i in 1:length(vCriVec)) {
                                                         goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                         metafeats = vNRMetaVec,
                                                    pparam = searchedEvaluator[[vCriVec[i]]]$param,
-                                                   gaparam = gaparam)
-  save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.RData'))
+                                                   gaparam = gaparam,pparallel = 'par')
+  save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.',gaparam$popsize,'.',gaparam$miter,'.WIN.RData'))
 }

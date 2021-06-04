@@ -360,7 +360,9 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
   
   finalsol <- GAret@solution
   
-  selfts <- fullfeat[c(which(finalsol==1))]
+  print(finalsol)
+  
+  selfts <- fullfeat[c(which(finalsol[1,]==1))]
   
   print(selfts)
   
