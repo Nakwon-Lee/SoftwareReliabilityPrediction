@@ -37,22 +37,19 @@ source('EvaluatorGen.R')
 source('buildDT.R')
 source('Misc.R')
 
-load('evaluator.CV/NoSMOTE.SAv2.VIF.FULL/envQ1aug.evalFull.1000.RData')
-
 gaparam <- list()
 gaparam$popsize <- 5
 gaparam$miter <- 5
 
-searchedFeats <- list()
+searchedAll <- list()
 
 for (i in 1:length(vCriVec)) {
-  searchedFeats[[vCriVec[i]]] <- searchforFeatures(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
+  searchedAll[[vCriVec[i]]] <- searchforALLGA(plist = vFCDGoflist,pnlist = vFCDGofNlist,pmetalist = vFCDMetalist,
                                                         regvars = paste0('N',c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP")),
                                                         ppert = vtotpert,pcri = vCriVec[i],pddmres = setting7retFCD,pgofres = setting111retFCD,
                                                         pgofddmlist = vFCDGofDDMlist,
                                                         goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                         metafeats = vNRMetaVec,
-                                                   pparam = searchedEvaluator[[vCriVec[i]]]$param,
                                                    gaparam = gaparam,pparallel = 'par')
-  save(searchedFeats,file = paste0('envQ1aug.evalFeats.GA.',gaparam$popsize,'.',gaparam$miter,'.WIN.RData'))
+  save(searchedAll,file = paste0('envQ1aug.evalAll.GA.',gaparam$popsize,'.',gaparam$miter,'.WIN.RData'))
 }

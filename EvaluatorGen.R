@@ -255,8 +255,6 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
     kmax <- 1000
   }
   
-  print(kmax)
-  
   goflret <- pgofres
   if(is.null(goflret)){
     goflret <- setting111LOOnoout(goflist = plist, gofregvec = regvars,
@@ -400,6 +398,206 @@ searchforFeatures <- function(plist,pnlist,pmetalist,
                              orimar = param,pcri = pcri)
   
   evalter$orimar <- param
+  
+  return(evalter)
+}
+
+searchforALLGA <- function(plist,pnlist,pmetalist,
+                              regvars,ppert,pcri,pddmres=NULL,pgofres=NULL,
+                              pfulldf=NULL,pfullfeats=NULL,pgofddmlist,
+                              goffeats,metafeats,
+                              gaparam = NULL,
+                              pparallel='seq'){
+  
+  goflret <- pgofres
+  if(is.null(goflret)){
+    goflret <- setting111LOOnoout(goflist = plist, gofregvec = regvars,
+                                  totpert = ppert,target = paste0("N",pcri),
+                                  measure = pcri,
+                                  fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
+  }
+  
+  ddmret <- pddmres
+  if(is.null(ddmret)){
+    ddmret <- settingDDMnoout(pgofddmlist,ppert,pcri)
+  }
+  
+  xddm <- log2(ddmret[,pcri])
+  ygof <- log2(goflret[,pcri])
+  origvec <- sort(c(xddm,ygof))
+  margvec <- sort(abs(ygof-xddm))
+  
+  ovecrange <- c(1:floor(length(origvec)/2))
+  mvecrange <- c(1:floor((length(margvec)*3)/4))
+  
+  print(paste0('Ori max: ',max(ovecrange)))
+  print(paste0('Mag max: ',max(mvecrange)))
+  
+  gofsubretlist <- NULL
+  load(file = paste0('gofsubretlist.',pcri,'.RData'))
+  if(is.null(gofsubretlist)){
+    gofsubretlist <- list()
+    for (i in 1:length(plist)) {
+      gofsubretlist[[i]] <- setting111LOOnoout(goflist = plist[-i], gofregvec = regvars,
+                                               totpert = ppert,target = paste0("N",pcri),
+                                               measure = pcri,
+                                               fntrain = settingGLMtrain, fnpredict = settingBasicpredict)
+    }
+    save(gofsubretlist,file = paste0('gofsubretlist.',pcri,'.RData'))
+  }
+  
+  ddmsubretlist <- NULL
+  load(file = paste0('ddmsubretlist.',pcri,'.RData'))
+  if(is.null(ddmsubretlist)){
+    ddmsubretlist <- list()
+    for (i in 1:length(pgofddmlist)) {
+      ddmsubretlist[[i]] <- settingDDMnoout(pgofddmlist[-i],ppert,pcri)
+    }
+    save(ddmsubretlist,file = paste0('ddmsubretlist.',pcri,'.RData'))
+  }
+  
+  tgofsublist <- NULL
+  load(file = paste0('tgofsublist.',pcri,'.RData'))
+  if(is.null(tgofsublist)){
+    tgofsublist <- list()
+    for (i in 1:length(plist)) {
+      tgofsublist[[i]] <- execGOF111(goflist = plist[-i],gofregvec = regvars,totpert = ppert,
+                                     ptarget = pcri,fntrain = settingGLMtrain,fnpredict = settingBasicpredict,
+                                     tgoflist = plist[c(i)])
+    }
+    save(tgofsublist,file = paste0('tgofsublist.',pcri,'.RData'))
+  }
+  
+  fullfeat <- c(goffeats,paste0("N",metafeats))
+  
+  ftsrange <- 1:((2^length(fullfeat))-1)
+  ftsbits <- decimal2binary(max(ftsrange))
+  ftslenbits <- length(ftsbits)
+  
+  ovcbits <- decimal2binary((max(ovecrange)-1))
+  ovclenbits <- length(ovcbits)
+  
+  mvcbits <- decimal2binary((max(mvecrange)-1))
+  mvclenbits <- length(mvcbits)
+  
+  Decoder1 <- function(x){
+    
+    gx <- gray2binary(x)
+    
+    ori <- min((max(ovecrange)-1),binary2decimal(gx[1:ovclenbits]))+1
+    
+    marlen <- c(1:mvclenbits) + ovclenbits
+    mar <- min((max(mvecrange)-1),binary2decimal(gx[c(marlen)]))+1
+    
+    ftslen <- c(1:ftslenbits) + (ovclenbits + mvclenbits)
+    fts <- gx[c(ftslen)]
+    
+    if(binary2decimal(fts)==0){
+      fts <- decimal2binary(1,length = ftslenbits)
+    }
+    
+    ccfts <- fullfeat[c(which(fts==1))]
+    
+    retp <- list()
+    retp$oidx <- ori
+    retp$orig <- origvec[retp$oidx]
+    retp$midx <- mar
+    retp$margin <- margvec[retp$midx]
+    retp$fts <- ccfts
+    
+    return(retp)
+  }
+  
+  cricache <- list()
+  
+  Fitness <- function(x){
+    
+    ppar <- Decoder1(x)
+    
+    print(ppar$fts)
+    
+    currcri <- Evaluation(plist = plist,ppert = ppert,
+                          pgofddmlist = pgofddmlist,pnlist = pnlist,pmetalist = pmetalist,
+                          pcri = pcri,
+                          gofretlist = gofsubretlist,ddmretlist = ddmsubretlist,tgofretlist = tgofsublist,
+                          param = ppar,goffeats = goffeats,metafeats = metafeats,
+                          pcache = cricache,pfts = ppar$fts,pftnum = binary2decimal(gray2binary(x)))
+    
+    currfitness <- mean(c(currcri$val,currcri$avg))
+    
+    print(paste0('this fitness: ',-currfitness))
+    
+    return(-currfitness)
+  }
+  
+  print('GA start!')
+  
+  lenbits <- ovclenbits + mvclenbits +ftslenbits
+  
+  if(pparallel=='seq'){
+    if(is.null(gaparam)){
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = 20,maxiter = 100,run = 100,keepBest = TRUE)
+    }else{
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE)
+    }
+  }else if(pparallel=='par'){
+    if(is.null(gaparam)){
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = 20,maxiter = 100,run = 100,keepBest = TRUE,parallel = TRUE)
+    }else{
+      GAret <- ga(type = 'binary',fitness = Fitness,nBits = lenbits,
+                  popSize = gaparam$popsize,maxiter = gaparam$miter,keepBest = TRUE,parallel = TRUE)
+    }
+  }
+  
+  print(GAret@bestSol[[length(GAret@bestSol)]])
+  
+  finalsol <- GAret@solution
+  
+  print(finalsol)
+  
+  finalpar <- Decoder1(finalsol)
+  
+  print(finalpar)
+  
+  selfts <- finalpar$fts
+  
+  fulldf <- pfulldf
+  fullfeat <- pfullfeats
+  
+  if(is.null(fulldf)){
+    metafulldf <- NULL
+    for (i in 1:length(pmetalist)) {
+      if(is.null(metafulldf)){
+        metafulldf <- pmetalist[[i]]
+      }else{
+        metafulldf <- rbind(metafulldf,pmetalist[[i]])
+      }
+    }
+    metafullndf <- normalization(metafulldf,metafeats)$df
+    
+    goffulldf <- NULL
+    for (i in 1:length(pgofddmlist)) {
+      if(is.null(goffulldf)){
+        goffulldf <- pgofddmlist[[i]]
+      }else{
+        goffulldf <- rbind(goffulldf,pgofddmlist[[i]])
+      }
+    }
+    goffulldf <- goffulldf[goffulldf$Model=="SVR",]
+    
+    fulldf <- cbind(metafullndf,goffulldf)
+    fullfeat <- c(goffeats,paste0("N",metafeats))
+  }
+  
+  evalter <- DDMevaluatorGen(pddmres = ddmret,pgofres = goflret,
+                             pfulldf = fulldf,pfullfeats = fullfeat,
+                             pselfts = selfts,
+                             orimar = finalpar,pcri = pcri)
+  
+  evalter$orimar <- finalpar
   
   return(evalter)
 }
@@ -665,7 +863,8 @@ Evaluation <- function(plist,ppert,pgofddmlist,
                           pcri = pcri,totpert = ppert,
                           goffts = goffeats,metafts = metafeats,
                           psearch = "GIVEN",givenparam = param,givenfts = pfts,
-                          tmetadf = pmetalist[picked],tgofddmlist = pgofddmlist[picked])
+                          tmetadf = pmetalist[picked],tgofddmlist = pgofddmlist[picked],
+                          tgoflist = plist[picked])
       
       for (j in 1:length(picked)) {
         testirows <- c(1:ppert)
@@ -696,6 +895,7 @@ Evaluation <- function(plist,ppert,pgofddmlist,
     }else{
       pcache[[paste0(param$oidx,".",param$midx,'.',pftnum)]] <- median(retdf[,pcri])
     }
+    ret$avg <- mean(retdf[,pcri])
     ret$cache <- pcache
     
     return(ret)

@@ -184,6 +184,8 @@ settingDGSsavedEvaluator <- function(goflist,gofnlist,gofddmlist,
 settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                                      metadf,pcri,totpert,
                                      goffts,metafts,
+                                 givenorimar=NULL,
+                                 givenfts,
                                  givenfile = NULL){
   param <- NULL
   
@@ -196,9 +198,16 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
     param <- searchedEvaluator[[pcri]]$param
   }
   
+  if(!is.null(givenorimar)){
+    param <- givenorimar
+  }
+  
   resultvec <- vector()
   
   DGSres <- NULL
+  
+  print(param)
+  print(givenfts)
   
   for (i in 1:length(goflist)) {
     cat(paste0(i," "))
@@ -211,7 +220,7 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                         goffts = goffts,metafts = metafts,
                         psearch = "GIVEN",givenparam = param,
                         tmetadf = metadf[picked],tgofddmlist = gofddmlist[picked],
-                        tgoflist = goflist[picked])
+                        tgoflist = goflist[picked],givenfts = givenfts)
     
     for (j in 1:length(picked)) {
       testirows <- c(1:totpert)
@@ -230,7 +239,6 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
         }
       }
     }
-    
     
     # if (is.null(DGSres)){
     #   DGSres <- DGSretdf
