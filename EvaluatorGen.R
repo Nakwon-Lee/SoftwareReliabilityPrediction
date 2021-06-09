@@ -561,12 +561,21 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
     
     print(paste0('this fitness: ',currfitness))
     
-    return(-currfitness)
+    return(currfitness)
   }
   
   results <- unlist(mclapply(pairsvec,Fitness))
+  thepair <- pairsvec[[which.min(results)]]
   
-  print(results)
+  retpar <- list()
+  retpar$oidx <- thepair[1]
+  retpar$orig <- origvec[retpar$oidx]
+  retpar$midx <- thepair[2]
+  retpar$margin <- margvec[retpar$midx]
+  
+  print(retpar)
+  
+  return(retpar)
 }
 
 searchforFtsGA <- function(plist,pnlist,pmetalist,
