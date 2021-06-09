@@ -519,11 +519,8 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
   origvec <- sort(c(xddm,ygof))
   margvec <- sort(abs(ygof-xddm))
   
-  # ovecrange <- c(1:floor(length(origvec)/2))
-  # mvecrange <- c(1:floor((length(margvec)*3)/4))
-  
-  ovecrange <- 1:3
-  mvecrange <- 1:3
+  ovecrange <- c(1:floor(length(origvec)/2))
+  mvecrange <- c(1:floor((length(margvec)*3)/4))
   
   print(paste0('Ori max: ',max(ovecrange)))
   print(paste0('Mag max: ',max(mvecrange)))
