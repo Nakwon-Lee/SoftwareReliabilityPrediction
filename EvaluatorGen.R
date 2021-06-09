@@ -564,7 +564,7 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
     return(-currfitness)
   }
   
-  results <- mclapply(pairsvec,Fitness)
+  results <- unlist(mclapply(pairsvec,Fitness))
   
   print(results)
 }
