@@ -50,6 +50,8 @@ for (i in 1:length(vCriVec)) {
                                                         pgofddmlist = vFCDGofDDMlist,
                                                         goffeats = c("MSE","MAE","Rsquare","Noise","Bias2","Variation","PRR","WLSE","CEP","CMEOP"),
                                                         metafeats = vNRMetaVec,
-                                                   gaparam = gaparam,pparallel = 'par')
-  save(searchedAll,file = paste0('envQ1aug.evalAll.GA.',gaparam$popsize,'.',gaparam$miter,'.WIN.RData'))
+                                                   gaparam = gaparam)
+  save(searchedAll,file = paste0('envQ1aug.evalAll.GA.NewFit.',gaparam$popsize,'.',gaparam$miter,'.WIN.RData'))
 }
+
+# ,pparallel = 'par'
