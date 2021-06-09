@@ -548,7 +548,7 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
     retp$midx <- mar
     retp$margin <- margvec[retp$midx]
     
-    filtvec <- filteringLabeler(pddmres[,pcri],pgofres[,pcri],ppar)
+    filtvec <- filteringLabeler(pddmres[,pcri],pgofres[,pcri],retp)
     
     currcri <- Evaluation(plist = plist,ppert = ppert,
                           pgofddmlist = pgofddmlist,pnlist = pnlist,pmetalist = pmetalist,
