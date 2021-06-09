@@ -564,7 +564,7 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
     return(currfitness)
   }
   
-  results <- unlist(mclapply(pairsvec,Fitness))
+  results <- unlist(mclapply(pairsvec,Fitness,mc.cores = detectCores()))
   thepair <- pairsvec[[which.min(results)]]
   
   retpar <- list()
