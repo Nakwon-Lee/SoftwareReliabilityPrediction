@@ -531,7 +531,7 @@ searchforOriMarExhaustive <- function(plist,pnlist,pmetalist,
   pairsvec <- list()
   for (i in ovecrange) {
     for (j in mvecrange) {
-      pairsvec[[length(pairsvec)]] <- c(i,j)
+      pairsvec[[(length(pairsvec)+1)]] <- c(i,j)
     }
   }
   
