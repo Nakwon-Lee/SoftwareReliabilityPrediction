@@ -410,3 +410,37 @@ normVal <- function(val,valvec){
   
   return(normval)
 }
+
+listrbinder <- function(df){
+  
+  retdf <- NULL
+  for (i in 1:length(df)) {
+    if(is.null(retdf)){
+      retdf <- df[[i]]
+    }else{
+      retdf <- rbind(retdf,df[[i]])
+    }
+  }
+  
+  return(retdf)
+}
+
+filteringPert <- function(dflist,cpert){
+  
+  thiscl <- class(dflist)
+  
+  ret <- NULL
+  
+  if(thiscl=='list'){
+    ret <- list()
+    
+    for (i in 1:length(dflist)) {
+      ret[[i]] <- dflist[[i]][dflist[[i]]$Pert==cpert,]
+    }
+    
+  }else if(thiscl=='data.frame'){
+    ret <- dflist[dflist$Pert==cpert,]
+  }
+  
+  return(ret)
+}

@@ -45,13 +45,12 @@ settingDGS <- function(goflist,gofnlist,gofddmlist,
 }
 
 settingDGSsepPert <- function(goflist,gofnlist,gofddmlist,
-                              metadf,pcri,totpert,
+                              metadf,pcri,cpert,
                               goffts,metafts){
-  resultvec <- vector()
   
-  for (m in 1:totpert) {
-    
-  }
+  
+  
+  resultvec <- vector()
   
   for (i in 1:length(goflist)) {
     cat(paste0(i," "))
@@ -184,6 +183,125 @@ settingDGSsavedEvaluator <- function(goflist,gofnlist,gofddmlist,
 settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                                      metadf,pcri,totpert,
                                      goffts,metafts,
+                                 pfiltvec=NULL,
+                                 givenorimar=NULL,
+                                 givenfts,
+                                 givenfile = NULL,
+                                 goffromddm){
+  param <- NULL
+  
+  if(is.null(givenfile)){
+    param <- list()
+    param$orig <- 1
+    param$margin <- 1
+  }else{
+    load(givenfile,envir = environment())
+    param <- searchedEvaluator[[pcri]]$param
+  }
+  
+  if(!is.null(givenorimar)){
+    param <- givenorimar
+  }
+  
+  print(param)
+  print(givenfts)
+  
+  DGSres <- NULL
+  resultvec <- vector()
+  resultvec2 <- vector()
+  
+  for (i in 1:length(goflist)) {
+    cat(paste0(i," "))
+
+    picked <- c(i)
+
+    DGSretdf <- execDGS(goflist = goflist[-picked],gofnlist = gofnlist[-picked],
+                        gofddmlist = gofddmlist[-picked],metadf = metadf[-picked],
+                        pcri = pcri,totpert = totpert,
+                        goffts = goffts,metafts = metafts,
+                        psearch = "GIVEN",givenparam = param,
+                        tmetadf = metadf[picked],tgofddmlist = gofddmlist[picked],
+                        tgoflist = goflist[picked],givenfts = givenfts)
+    
+    if(is.null(DGSres)){
+      DGSres <- DGSretdf
+    }else{
+      DGSres <- rbind(DGSres,DGSretdf)
+    }
+
+    for (j in 1:length(picked)) {
+      testirows <- c(1:totpert)
+      testirows <- testirows + (totpert * (j-1))
+
+      temdgsret <- DGSretdf[testirows,]
+      
+      tgofddm <- gofddmlist[[picked[j]]]
+      
+      tgoffromddm <- goffromddm[[picked[j]]]
+      
+      tgofdf <- goflist[[picked[j]]]
+
+      for (k in 1:nrow(temdgsret)) {
+        if (temdgsret[k,paste0("DGS.RET.",pcri)]=="DDM"){
+          
+          currgofddm <- tgofddm[tgofddm$Pert==temdgsret[k,"Pert"],]
+          resultvec2[(length(resultvec2)+1)] <- currgofddm[currgofddm$Model=='SVR',][1,pcri]
+          
+          currsrgmddm <- tgoffromddm[tgoffromddm$Pert==temdgsret[k,"Pert"],]
+          currsrgmddmodered <- currsrgmddm[order(currsrgmddm$MSE),]
+          
+          resultvec[(length(resultvec)+1)] <- currsrgmddmodered[1,pcri]
+          
+        }else{
+          
+          currgofdf <- tgofdf[tgofdf$Pert==temdgsret[k,"Pert"],]
+          resultvec[(length(resultvec)+1)] <- currgofdf[currgofdf$Model==temdgsret[k,paste0("DGS.RET.",pcri)],][1,pcri]
+          resultvec2[(length(resultvec2)+1)] <- currgofdf[currgofdf$Model==temdgsret[k,paste0("DGS.RET.",pcri)],][1,pcri]
+        }
+      }
+    }
+  }
+  
+  if(!is.null(pfiltvec)){
+    filvec <- pfiltvec
+    
+    DGSres$FIL <- filvec
+    
+    filtnum <- nrow(na.omit(DGSres)) / nrow(DGSres)
+    filtDGSres <- na.omit(DGSres)
+    
+    filtddmdf <- filtDGSres[which(filtDGSres$FIL=="DDM"),]
+    filtgofdf <- filtDGSres[which(filtDGSres$FIL!="DDM"),]
+    
+    ddmacc <- nrow(filtddmdf[which(filtddmdf$FIL==filtddmdf[,paste0("DGS.RET.",pcri)]),]) / nrow(filtddmdf)
+    gofacc <- nrow(filtgofdf[which(filtgofdf$FIL==filtgofdf[,paste0("DGS.RET.",pcri)]),]) / nrow(filtgofdf)
+    
+    retdf <- data.frame(resultvec)
+    colnames(retdf) <- c(pcri)
+    
+    ret <- list()
+    ret$val <- median(retdf[,pcri])
+    ret$avg <- mean(retdf[,pcri])
+    ret$acc <- (ddmacc + gofacc)/2
+    ret$filtnum <- filtnum
+    
+    print(ret)
+  }
+  
+  retdf <- data.frame(resultvec)
+  colnames(retdf) <- c(pcri)
+  
+  print(c(pcri,median(retdf[,pcri])))
+  
+  print(c("DDM ",pcri,median(resultvec2)))
+  
+  return(retdf)
+}
+
+settingDGSfixedParamPert <- function(goflist,gofnlist,gofddmlist,
+                                 metadf,pcri,totpert,
+                                 goffts,metafts,
+                                 pfiltvec=NULL,
                                  givenorimar=NULL,
                                  givenfts,
                                  givenfile = NULL){
@@ -202,12 +320,11 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
     param <- givenorimar
   }
   
-  resultvec <- vector()
-  
-  DGSres <- NULL
-  
   print(param)
   print(givenfts)
+  
+  DGSres <- NULL
+  resultvec <- vector()
   
   for (i in 1:length(goflist)) {
     cat(paste0(i," "))
@@ -221,6 +338,12 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
                         psearch = "GIVEN",givenparam = param,
                         tmetadf = metadf[picked],tgofddmlist = gofddmlist[picked],
                         tgoflist = goflist[picked],givenfts = givenfts)
+    
+    if(is.null(DGSres)){
+      DGSres <- DGSretdf
+    }else{
+      DGSres <- rbind(DGSres,DGSretdf)
+    }
     
     for (j in 1:length(picked)) {
       testirows <- c(1:totpert)
@@ -239,12 +362,32 @@ settingDGSfixedParam <- function(goflist,gofnlist,gofddmlist,
         }
       }
     }
+  }
+  
+  if(!is.null(pfiltvec)){
+    filvec <- pfiltvec
     
-    # if (is.null(DGSres)){
-    #   DGSres <- DGSretdf
-    # }else{
-    #   DGSres <- rbind(DGSres,DGSretdf)
-    # }
+    DGSres$FIL <- filvec
+    
+    filtnum <- nrow(na.omit(DGSres)) / nrow(DGSres)
+    filtDGSres <- na.omit(DGSres)
+    
+    filtddmdf <- filtDGSres[which(filtDGSres$FIL=="DDM"),]
+    filtgofdf <- filtDGSres[which(filtDGSres$FIL!="DDM"),]
+    
+    ddmacc <- nrow(filtddmdf[which(filtddmdf$FIL==filtddmdf[,paste0("DGS.RET.",pcri)]),]) / nrow(filtddmdf)
+    gofacc <- nrow(filtgofdf[which(filtgofdf$FIL==filtgofdf[,paste0("DGS.RET.",pcri)]),]) / nrow(filtgofdf)
+    
+    retdf <- data.frame(resultvec)
+    colnames(retdf) <- c(pcri)
+    
+    ret <- list()
+    ret$val <- median(retdf[,pcri])
+    ret$avg <- mean(retdf[,pcri])
+    ret$acc <- (ddmacc + gofacc)/2
+    ret$filtnum <- filtnum
+    
+    print(ret)
   }
   
   retdf <- data.frame(resultvec)
@@ -510,8 +653,140 @@ execDGS <- function(pgofldf=NULL,pddmodf=NULL,ptgofdf = NULL,
   
   predretdf[paste0("DGS.RET.",pcri)] <- ifelse(predretdf$Pred=="DDM","DDM",gofretfulldf$Model)
   
+  # for (i in 1:length(totpert)) {
+  #   if (predretdf$Pred=="DDM"){
+  #     fitSRGMfromDDMSingle(df=tdataf,pEst = tddmest,modelvec = psrgmvec,
+  #                          pert = (i+3),isFCTBF = 'FC')
+  #   }
+  # }
+  
   return(predretdf)
 }
+
+# N data, N+1 prediction
+execDGSPert <- function(pgofldf,pddmodf,ptgofdf = NULL,
+                    goflist,
+                    gofnlist,gofddmlist,metadf,
+                    pcri,cpert,goffts,metafts,
+                    givenevalfile=NULL,psearch=NULL,
+                    givenparam=NULL,givenfts=NULL,
+                    tmetadf,tgofddmlist,tgoflist,
+                    modelSelection,dataDriven){
+  
+  modelselres <- NULL
+  for (i in 1:length(gofnlist)) {
+    if(is.null(modelselres)){
+      modelselres <- modelSelection(traininglist,targetlist)
+    }else{
+      modelselres <- rbind(modelselres,modelSelection(traininglist,targetlist))
+    }
+  }
+  
+  datadrivenEst <- list()
+  for (i in 1:length(datadf)) {
+    datadrivenEst[[i]] <- dataDriven(targetdf)
+  }
+  
+  datadrivenres <- NULL
+  for (i in 1:length(datadf)) {
+    if(is.null(datadrivenres)){
+      datadrivenres <- CalcGOFDDMlist(targetdf,datadrivenEst[[i]])
+    }else{
+      datadrivenres <- rbind(datadrivenres,CalcGOFDDMlist(targetdf,datadrivenEst[[i]]))
+    }
+  }
+  
+  
+  
+  goflret <- pgofldf
+  
+  ddmret <- pddmodf
+  
+  metafulldf <- listrbinder(metadf)
+  metafulldf <- metafulldf[metafulldf$Pert==cpert,]
+  metafullndf <- normalization(metafulldf,metafts)$df
+  
+  goffulldf <- listbinder(gofddmlist)
+  goffulldf <- goffulldf[goffulldf$Pert==cpert,]
+  goffulldf <- goffulldf[goffulldf$Model=="SVR",]
+  
+  fulldf <- cbind(metafullndf,goffulldf)
+  fullfeat <- c(goffts,paste0("N",metafts))
+  
+  ddmeval <- NULL
+  
+  if(is.null(psearch)){
+    ddmeval <- DDMevaluatorGen(pddmres = ddmret,pgofres = goflret,
+                               pfulldf = fulldf,pfullfeats = fullfeat,
+                               pcri = pcri)
+  }else{
+    if(psearch=="SEARCH"){
+      ddmeval <- searchforEvaluator(plist = goflist,pnlist = gofnlist,pmetalist = metadf,
+                                    regvars = paste0("N",goffts),ppert = cpert,pcri = pcri,
+                                    pgofddmlist = gofddmlist, goffeats = goffts,metafeats = metafts,
+                                    pddmres = ddmret,pgofres = goflret,
+                                    pfulldf = fulldf,pfullfeats = fullfeat)
+    }else if(psearch=="GIVEN"){
+      ddmeval <- DDMevaluatorGen(pddmres = ddmret,pgofres = goflret,
+                                 pfulldf = fulldf,pfullfeats = fullfeat,
+                                 orimar = givenparam,pselfts = givenfts,
+                                 pcri = pcri)
+    }
+  }
+  
+  tmetafulldf <- NULL
+  for (i in 1:length(tmetadf)) {
+    if(is.null(tmetafulldf)){
+      tmetafulldf <- tmetadf[[i]]
+    }else{
+      tmetafulldf <- rbind(tmetafulldf,tmetadf[[i]])
+    }
+  }
+  tmetafulldf2 <- rbind(tmetafulldf,metafulldf)
+  tmetafullndf <- normalization(tmetafulldf2,metafts)$df
+  tmetafullndf <- tmetafullndf[1:nrow(tmetafulldf),]
+  
+  tgoffulldf <- NULL
+  for (i in 1:length(tgofddmlist)) {
+    if(is.null(tgoffulldf)){
+      tgoffulldf <- tgofddmlist[[i]]
+    }else{
+      tgoffulldf <- rbind(tgoffulldf,tgofddmlist[[i]])
+    }
+  }
+  tgoffulldf <- tgoffulldf[tgoffulldf$Model=="SVR",]
+  
+  stopifnot(nrow(tmetafullndf)==nrow(tgoffulldf))
+  
+  tfulldf <- cbind(tmetafullndf,tgoffulldf)
+  
+  #classification
+  predretdf <- setting1predictcl(ddmeval$evaluator,ddmeval$fts,tfulldf)
+  
+  gofretlist <- ptgofdf
+  if(is.null(gofretlist)){
+    gofretlist <- execGOF111(goflist = goflist,gofregvec = paste0("N",goffts),cpert = cpert,
+                             ptarget = pcri,fntrain = settingGLMtrain,fnpredict = settingBasicpredict,
+                             tgoflist = tgoflist)
+  }
+  
+  gofretfulldf <- NULL
+  for (i in 1:length(gofretlist)) {
+    if (is.null(gofretfulldf)){
+      gofretfulldf <- gofretlist[[i]]$sel
+    }else{
+      gofretfulldf <- rbind(gofretfulldf,gofretlist[[i]]$sel)
+    }
+  }
+  
+  stopifnot(nrow(predretdf)==nrow(gofretfulldf))
+  
+  predretdf[paste0("DGS.RET.",pcri)] <- ifelse(predretdf$Pred=="DDM","DDM",gofretfulldf$Model)
+  
+  return(predretdf)
+}
+
+
 
 execDGSEvaluatorGen <- function(pgofldf=NULL,pddmodf=NULL,goflist,
                                 gofnlist,gofddmlist,metadf,

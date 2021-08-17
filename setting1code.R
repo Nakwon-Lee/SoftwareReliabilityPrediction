@@ -11,7 +11,7 @@ setting1LOO <- function(goflist,ngoflist,
   numtestingcases <-  length(goflist) * totpert
   
   csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases, ncol = (length(measures)*2))
+  csvmat <- matrix(nrow = numtestingcases, ncol = ((length(measures)*2)+2))
   
   nmeasures <- paste0("N",measures)
   
@@ -153,15 +153,23 @@ setting1LOO <- function(goflist,ngoflist,
           }
         }
       }
+      
+      csvmat[(((i-1)*totpert)+j),((length(measures)*2)+1)] <- picked
+      csvmat[(((i-1)*totpert)+j),((length(measures)*2)+2)] <- currpert
     }
   }
   
   csvdf <- data.frame(csvmat)
   
-  names(csvdf) <- c(measures,nmeasures)
+  names(csvdf) <- c(measures,nmeasures,'Num','Pert')
   
   print(" ")
   print("setting1")
+  
+  for (i in 1:length(measures)) {
+    csvdf[measures[i]] <- as.numeric(csvdf[,measures[i]])
+    csvdf[nmeasures[i]] <- as.numeric(csvdf[,nmeasures[i]])
+  }
   
   for (i in 1:length(measures)) {
     prefix <- paste0(measures[i]," Avg.: ")
@@ -203,6 +211,8 @@ setting111LOOnoout <- function(goflist,
   
   resultvec <- vector()
   selvec <- vector()
+  setnumvec <- vector()
+  pertvec <- vector()
   
   for (i in 1:length(goflist)){
     
@@ -219,6 +229,9 @@ setting111LOOnoout <- function(goflist,
     for (j in 1:totpert) {
       currpert <- paste0("P",as.character((10-totpert-1)+j))
       
+      setnumvec[(length(setnumvec)+1)] <- i
+      pertvec[(length(pertvec)+1)] <- currpert
+      
       trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,target)]
       testsetsub <- testset[testset$Pert==currpert,]
       
@@ -234,10 +247,29 @@ setting111LOOnoout <- function(goflist,
   }
   
   csvdf <- data.frame(resultvec)
-  
   names(csvdf) <- c(measure)
+  csvdf$Num <- setnumvec
+  csvdf$Pert <- pertvec
   
   return(csvdf)
+}
+
+setting111LOOPert <- function(goflist,
+                              targetdf,
+                              gofregvec,
+                              pcri){
+  
+  traindf <- listrbinder(goflist)
+  testdf <- targetdf
+  
+  rpartEP <- settingGLMtrain(traindf,gofregvec,pcri)
+  
+  selectionEPret <- settingBasicpredict(rpartEP,gofregvec,testdf)
+  
+  testcurr <- selectionEPret
+  testcurr.ordered <- testcurr[order(-testcurr$Pred,-testcurr$NMSE),]
+  
+  return(testcurr.ordered[1,'Model'])
 }
 
 execGOF111 <- function(goflist,
@@ -264,6 +296,49 @@ execGOF111 <- function(goflist,
   for (i in 1:length(tgoflist)) {
     testset <- tgoflist[[i]]
     selectionEPret[[i]] <- list()
+    for (j in 1:totpert) {
+      currpert <- paste0("P",as.character((10-totpert-1)+j))
+      testsetsub <- testset[testset$Pert==currpert,]
+      tempret <- fnpredict(models[[j]],gofregvec,testsetsub)
+      if(is.null(selectionEPret[[i]]$df)){
+        selectionEPret[[i]]$df <- tempret
+      }else{
+        selectionEPret[[i]]$df <- rbind(selectionEPret[[i]]$df,tempret)
+      }
+      testcurr <- tempret
+      testcurr.ordered <- testcurr[order(-testcurr$Pred,-testcurr$NMSE),]
+      if(is.null(selectionEPret[[i]]$sel)){
+        selectionEPret[[i]]$sel <- testcurr.ordered[1,]
+      }else{
+        selectionEPret[[i]]$sel <- rbind(selectionEPret[[i]]$sel,testcurr.ordered[1,])
+      }
+    }
+  }
+  
+  return(selectionEPret)
+}
+
+execGOF111Pert <- function(goflist,
+                       gofregvec,
+                       cpert,
+                       ptarget,
+                       fntrain,fnpredict,
+                       tgoflist){
+  
+  currpert <- cpert
+  
+  trainset <- listrbinder(goflist)
+  trainsetsub <- trainset[trainset$Pert==currpert,c(gofregvec,paste0("N",ptarget))]
+  
+  model <- fntrain(trainsetsub,gofregvec,paste0("N",ptarget))
+  
+  selectionEPret <- list()
+  for (i in 1:length(tgoflist)) {
+    testset <- tgoflist[[i]]
+    selectionEPret[[i]] <- list()
+    
+    
+    
     for (j in 1:totpert) {
       currpert <- paste0("P",as.character((10-totpert-1)+j))
       testsetsub <- testset[testset$Pert==currpert,]

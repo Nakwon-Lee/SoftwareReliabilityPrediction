@@ -63,6 +63,8 @@ settingDGStraincl <- function(ptrain,vars,target){
     }
   }
   
+  ptrain[target] <- factor(ptrain[,target],c('GOF','DDM'))
+  
   targetformula <- as.formula(paste0(target,"~",right))
   
   # ADTree <- make_Weka_classifier("weka/classifiers/trees/ADTree")
@@ -70,7 +72,7 @@ settingDGStraincl <- function(ptrain,vars,target){
   
   # adtmodel <- best.svm(targetformula,data=ptrain)
   
-  adtmodel <- rpart(targetformula,data=ptrain)
+  adtmodel <- rpart(targetformula,data=ptrain,method="class")
   
   # adtmodel <- best.randomForest(targetformula,data=ptrain)
   
@@ -82,7 +84,7 @@ settingDGStraincl <- function(ptrain,vars,target){
   return(adtmodel)
 }
 
-setting1predictcl <- function(fittedtree,pvec,df){
+setting1predictcl <- function(fittedtree,df){
   retbest <- NULL
   
   for(i in 1:nrow(df)){

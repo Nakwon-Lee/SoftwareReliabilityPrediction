@@ -7,7 +7,7 @@ settingMSE <- function(goflist,ngoflist,totpert,measures){
   nmeasures <- paste0("N",measures)
   
   csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)*2))
+  csvmat <- matrix(nrow = numtestingcases,ncol = ((length(measures)*2)+2))
   
   for (i in 1:length(goflist)){
     
@@ -35,12 +35,15 @@ settingMSE <- function(goflist,ngoflist,totpert,measures){
       csvmat[(((i-1)*totpert)+j),3] <- ngofsub[1,nmeasures[1]]
       csvmat[(((i-1)*totpert)+j),2] <- mean(bestrow[,measures[2]])
       csvmat[(((i-1)*totpert)+j),4] <- ngofsub[1,nmeasures[2]]
+      
+      csvmat[(((i-1)*totpert)+j),5] <- picked
+      csvmat[(((i-1)*totpert)+j),6] <- currpert
     }
   }
   
   csvdf <- data.frame(csvmat)
   
-  names(csvdf) <- c(measures,nmeasures)
+  names(csvdf) <- c(measures,nmeasures,"Num","Pert")
   
   print(" ")
   print("settingMSE")
@@ -65,7 +68,7 @@ settingDDM <- function(ngofddmlist,totpert,measures){
   numtestingcases <- length(ngofddmlist) * totpert
   
   csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)))
+  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)+2))
   
   for (i in 1:length(ngofddmlist)){
     cat(" ",i)
@@ -80,15 +83,18 @@ settingDDM <- function(ngofddmlist,totpert,measures){
       testcurr <- NULL
       testcurr <- testset[testset$Pert==currpert,]
       
+      csvmat[(((i-1)*totpert)+j),1] <- picked
+      csvmat[(((i-1)*totpert)+j),2] <- currpert
+      
       for (k in 1:length(measures)) {
-        csvmat[(((i-1)*totpert)+j),k] <- testcurr[testcurr$Model=="SVR",measures[k]]
+        csvmat[(((i-1)*totpert)+j),(2+k)] <- testcurr[testcurr$Model=="SVR",measures[k]]
       }
     }
   }
   
   csvdf <- data.frame(csvmat)
   
-  names(csvdf) <- c(measures)
+  names(csvdf) <- c('Num','Pert',measures)
   
   print(" ")
   print("settingDDM")
@@ -110,7 +116,7 @@ settingDDMnoout <- function(ngofddmlist,totpert,measures){
   numtestingcases <- length(ngofddmlist) * totpert
   
   csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)))
+  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)+2))
   
   for (i in 1:length(ngofddmlist)){
     
@@ -124,15 +130,18 @@ settingDDMnoout <- function(ngofddmlist,totpert,measures){
       testcurr <- NULL
       testcurr <- testset[testset$Pert==currpert,]
       
+      csvmat[(((i-1)*totpert)+j),1] <- picked
+      csvmat[(((i-1)*totpert)+j),2] <- currpert
+      
       for (k in 1:length(measures)) {
-        csvmat[(((i-1)*totpert)+j),k] <- testcurr[testcurr$Model=="SVR",measures[k]]
+        csvmat[(((i-1)*totpert)+j),k+2] <- testcurr[testcurr$Model=="SVR",measures[k]]
       }
     }
   }
   
   csvdf <- data.frame(csvmat)
   
-  names(csvdf) <- c(measures)
+  names(csvdf) <- c('Num','Pert',measures)
   
   # print(" ")
   # print("settingDDM")
@@ -149,7 +158,50 @@ settingDDMnoout <- function(ngofddmlist,totpert,measures){
   return(csvdf)
 }
 
-
+settingDDMPert <- function(ngofddmlist,cpert,measures){
+  
+  numtestingcases <- length(ngofddmlist)
+  
+  csvmat <- NULL
+  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)+2))
+  
+  for (i in 1:length(ngofddmlist)){
+    
+    picked <- i
+    
+    testset <- ngofddmlist[[picked]]
+    
+    currpert <- cpert
+    
+    testcurr <- NULL
+    testcurr <- testset[testset$Pert==currpert,]
+    
+    csvmat[(((i-1)*totpert)+j),1] <- picked
+    csvmat[(((i-1)*totpert)+j),2] <- currpert
+    
+    for (k in 1:length(measures)) {
+      csvmat[(((i-1)*totpert)+j),k+2] <- testcurr[testcurr$Model=="SVR",measures[k]]
+    }
+  }
+  
+  csvdf <- data.frame(csvmat)
+  
+  names(csvdf) <- c('Num','Pert',measures)
+  
+  # print(" ")
+  # print("settingDDM")
+  
+  for (i in 1:length(measures)) {
+    csvdf[measures[i]] <- as.numeric(csvdf[,measures[i]])
+  }
+  
+  # for (i in 1:length(measures)) {
+  #   prefix <- paste0(measures[i]," Avg.: ")
+  #   print(c(prefix,median(csvdf[,measures[i]])))
+  # }
+  
+  return(csvdf)
+}
 
 # settingBest
 
@@ -160,7 +212,7 @@ settingBest <- function(ngoflist,totpert,measures){
   nmeasures <- paste0("R",measures)
   
   csvmat <- NULL
-  csvmat <- matrix(nrow = numtestingcases,ncol = (length(measures)*3))
+  csvmat <- matrix(nrow = numtestingcases,ncol = ((length(measures)*3)+2))
   
   for (i in 1:length(ngoflist)){
     cat(" ",i)
@@ -185,12 +237,15 @@ settingBest <- function(ngoflist,totpert,measures){
       csvmat[(((i-1)*totpert)+j),2] <- testcurr.ordered[1,measures[2]]
       csvmat[(((i-1)*totpert)+j),4] <- testcurr.ordered[1,nmeasures[2]]
       csvmat[(((i-1)*totpert)+j),6] <- testcurr.ordered[1,"Model"]
+      
+      csvmat[(((i-1)*totpert)+j),7] <- picked
+      csvmat[(((i-1)*totpert)+j),8] <- currpert
     }
   }
   
   csvdf <- data.frame(csvmat)
   
-  names(csvdf) <- c(measures,nmeasures,paste0("Best",measures))
+  names(csvdf) <- c(measures,nmeasures,paste0("Best",measures),'Num','Pert')
   
   print(" ")
   print("settingBest")
