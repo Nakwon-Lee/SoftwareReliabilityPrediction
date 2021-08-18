@@ -127,39 +127,29 @@ paramEstimation <- function(df,cfg,presidFunc,pformula){
   
   retout <- NULL
   
+  validity <- TRUE
+  
   if (!is.null(nls.out)) {
-    retout <- as.list(coef(nls.out))
+    parlist <- as.list(coef(nls.out))
+    
+    for (i in 1:length(cfg$parInit)){
+      if (parlist[[i]] < cfg$parLower[i]){
+        validity <- FALSE
+        break
+      }
+      if (parlist[[i]] > cfg$parUpper[i]){
+        validity <- FALSE
+        break
+      }
+    }
+    
+    if (!validity) {
+      retout <- NULL
+    }else{
+      retout <- as.list(coef(nls.out))
+    }
   }
 
-  # if (is.null(nls.out)) {
-  #   
-  #   retout <- thisinit
-  #   
-  # }else{
-  # 
-  #   validity <- TRUE
-  #   parlist <- as.list(coef(nls.out))
-  # 
-  #   for (i in 1:length(cfg$parInit)){
-  #     if (parlist[[i]] < cfg$parLower[i]){
-  #       validity <- FALSE
-  #       break
-  #     }
-  #     if (parlist[[i]] > cfg$parUpper[i]){
-  #       validity <- FALSE
-  #       break
-  #     }
-  #   }
-  # 
-  #   if (!validity) {
-  #     
-  #     retout <- thisinit
-  #     
-  #   }else{
-  #     retout <- as.list(coef(nls.out))
-  #   }
-  # }
-  
   return(retout)
 }
 
