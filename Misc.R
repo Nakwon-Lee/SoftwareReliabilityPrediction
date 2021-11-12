@@ -444,3 +444,35 @@ filteringPert <- function(dflist,cpert){
   
   return(ret)
 }
+
+horiCalculator <- function(ppert,totlen){
+  
+  ratio <- getPercentage(ppert)
+  
+  fithori <- floor(totlen * ratio)
+  
+  rethori <- list()
+  rethori$fit <- fithori
+  rethori$pred <- totlen
+  
+  return(rethori)
+}
+
+getPercentage <- function(ppert){
+  ratio <- NULL
+  if (ppert=='P4'){
+    ratio <- 0.4
+  }else if (ppert=='P5'){
+    ratio <- 0.5
+  }else if (ppert=='P6'){
+    ratio <- 0.6
+  }else if (ppert=='P7'){
+    ratio <- 0.7
+  }else if (ppert=='P8'){
+    ratio <- 0.8
+  }else if (ppert=='P9'){
+    ratio <- 0.9
+  }
+  
+  return(ratio)
+}

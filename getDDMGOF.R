@@ -870,3 +870,61 @@ getDDMGOFforaData <- function(pEst,df,
   
   return(cbind(leftdf,rightdf,lastdf))
 }
+
+getDDMGOFExtforaData <- function(pEst,df,
+                              ptrainh,ppredh,
+                              pmodel,pgoffts){
+  
+  leftmatrix <- matrix(nrow=1,ncol=1)
+  rightmatrix <- matrix(nrow=1,ncol=(length(pgoffts)-1))
+  rightmatrix2 <- matrix(nrow=1,ncol=1)
+  lastmatrix <- matrix(nrow=1,ncol=2)
+  
+  observed <- df$n
+  
+  currmodel <- pmodel
+  
+  thismodelddm <- pEst[[currmodel]]
+  estimated <- thismodelddm$EstElap
+  estimated <- ifelse(estimated<0,0,estimated)
+  frestimated <- thismodelddm$EstFr
+  frestimated <- ifelse(frestimated<0,0,frestimated)
+  dim <- thismodelddm$dim
+  
+  fittrainH <- (ptrainh-dim)
+  fitpredH <- (ppredh-dim)
+  fitobserved <- observed[-c(1:dim)]
+  fitestimated <- estimated[-c(1:dim)]
+  fitfrestimated <- frestimated[-c(1:dim)]
+  
+  leftmatrix[1,1] <- currmodel
+  
+  rightmatrix[1,1] <- FC.MSE(fittrainH,0,fitobserved,fitestimated)
+  rightmatrix[1,2] <- FC.MAE(fittrainH,0,fitobserved,fitestimated)
+  rightmatrix[1,3] <- FC.Rsquare(fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,4] <- FC.Noise(fittrainH,fitfrestimated)
+  rightmatrix[1,5] <- FC.Bias(1,fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,6] <- FC.Variation(fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,7] <- FC.PRR(fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,8] <- FC.WLSE(fittrainH,fitobserved,fitestimated,0.2)
+  rightmatrix[1,9] <- FC.EP(fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,10] <- FC.MEOP(1,fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,11] <- FC.TOUP(fittrainH,fitobserved,fitestimated)
+  rightmatrix[1,12] <- abs(FC.Bias(1,fittrainH,fitobserved,fitestimated))
+  
+  rightmatrix2[1,1] <- GROUP(FC.Bias(ptrainh,ppredh,observed,estimated))
+  
+  lastmatrix[1,1] <- FC.EP(ppredh,observed,estimated)
+  lastmatrix[1,2] <- FC.MEOP(ptrainh,ppredh,observed,estimated)
+  
+  leftdf <- data.frame(leftmatrix)
+  names(leftdf) <- c('Model')
+  rightdf <- data.frame(rightmatrix)
+  names(rightdf) <- pgoffts[1:(length(pgoffts)-1)]
+  rightdf2 <- data.frame(rightmatrix2)
+  names(rightdf2) <- c('Group')
+  lastdf <- data.frame(lastmatrix)
+  names(lastdf) <- c('EP','MEOP')
+  
+  return(cbind(leftdf,rightdf,rightdf2,lastdf))
+}

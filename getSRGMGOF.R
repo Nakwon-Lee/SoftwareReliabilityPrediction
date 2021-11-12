@@ -755,274 +755,282 @@ getSRGMEstOrig <- function(df,
   
   retlist <- list()
   retlist$trainH <- trainh
-  
-  dflearnsub <- dflearn[1:trainh]
 
   for(i in 1:length(modelvec)){
     
-    currmodel <- modelvec[i] #current model name
-    
-    retparam <- NULL
-    estimated <- NULL
-    frestimated <- NULL
-    
-    numparam <- 0
-    
-    pcfg <- list()
-    
-    pcfg$miter <- maxiter
-    pcfg$algo <- "Best"
-    
-    funcForm <- NULL
-    funcFRForm <- NULL
-    residForm <- NULL
-    formulaThis <- NULL
-    parmEstThis <- NULL
-    
-    if (modelvec[i]=="GO") {
-      pcfg$parInit <- parInitGO()
-      pcfg$parLower <- parLowerGO()
-      pcfg$parUpper <- parUpperGO()
-      pcfg$parGrid <- parGridGO()
-      
-      funcForm <- funcGO
-      funcFRForm <- funcFRGO
-      residForm <- residFuncGO
-      formulaThis <- formulaGO
-      
-      numparam <- 2
-      
-    }else if(modelvec[i]=="GG"){
-      pcfg$parInit <- parInitGG()
-      pcfg$parLower <- parLowerGG()
-      pcfg$parUpper <- parUpperGG()
-      pcfg$parGrid <- parGridGG()
-      
-      funcForm <- funcGG
-      funcFRForm <- funcFRGG
-      residForm <- residFuncGG
-      formulaThis <- formulaGG
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="Gompz"){
-      pcfg$parInit <- parInitGompz()
-      pcfg$parLower <- parLowerGompz()
-      pcfg$parUpper <- parUpperGompz()
-      pcfg$parGrid <- parGridGompz()
-      
-      funcForm <- funcGompz
-      funcFRForm <- funcFRGompz
-      residForm <- residFuncGompz
-      formulaThis <- formulaGompz
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="ISS"){
-      pcfg$parInit <- parInitISS()
-      pcfg$parLower <- parLowerISS()
-      pcfg$parUpper <- parUpperISS()
-      pcfg$parGrid <- parGridISS()
-      
-      funcForm <- funcISS
-      funcFRForm <- funcFRISS
-      residForm <- residFuncISS
-      formulaThis <- formulaISS
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="MD"){
-      pcfg$parInit <- parInitMD()
-      pcfg$parLower <- parLowerMD()
-      pcfg$parUpper <- parUpperMD()
-      pcfg$parGrid <- parGridMD()
-      
-      funcForm <- funcMD
-      funcFRForm <- funcFRMD
-      residForm <- residFuncMD
-      formulaThis <- formulaMD
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="MO"){
-      pcfg$parInit <- parInitMO()
-      pcfg$parLower <- parLowerMO()
-      pcfg$parUpper <- parUpperMO()
-      pcfg$parGrid <- parGridMO()
-      
-      funcForm <- funcMO
-      funcFRForm <- funcFRMO
-      residForm <- residFuncMO
-      formulaThis <- formulaMO
-      
-      numparam <- 2
-      
-    }else if(modelvec[i]=="YID1"){
-      pcfg$parInit <- parInitYID1()
-      pcfg$parLower <- parLowerYID1()
-      pcfg$parUpper <- parUpperYID1()
-      pcfg$parGrid <- parGridYID1()
-      
-      funcForm <- funcYID1
-      funcFRForm <- funcFRYID1
-      residForm <- residFuncYID1
-      formulaThis <- formulaYID1
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="YID2"){
-      pcfg$parInit <- parInitYID2()
-      pcfg$parLower <- parLowerYID2()
-      pcfg$parUpper <- parUpperYID2()
-      pcfg$parGrid <- parGridYID2()
-      
-      funcForm <- funcYID2
-      funcFRForm <- funcFRYID2
-      residForm <- residFuncYID2
-      formulaThis <- formulaYID2
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="DSS"){
-      pcfg$parInit <- parInitDSS()
-      pcfg$parLower <- parLowerDSS()
-      pcfg$parUpper <- parUpperDSS()
-      pcfg$parGrid <- parGridDSS()
-      
-      funcForm <- funcDSS
-      funcFRForm <- funcFRDSS
-      residForm <- residFuncDSS
-      formulaThis <- formulaDSS
-      
-      numparam <- 2
-      
-    }else if(modelvec[i]=="PNZ"){
-      pcfg$parInit <- parInitPNZ()
-      pcfg$parLower <- parLowerPNZ()
-      pcfg$parUpper <- parUpperPNZ()
-      pcfg$parGrid <- parGridPNZ()
-      
-      funcForm <- funcPNZ
-      funcFRForm <- funcFRPNZ
-      residForm <- residFuncPNZ
-      formulaThis <- formulaPNZ
-      
-      numparam <- 4
-      
-    }else if(modelvec[i]=="PZ"){
-      pcfg$parInit <- parInitPZ()
-      pcfg$parLower <- parLowerPZ()
-      pcfg$parUpper <- parUpperPZ()
-      pcfg$parGrid <- parGridPZ()
-      
-      funcForm <- funcPZ
-      funcFRForm <- funcFRPZ
-      residForm <- residFuncPZ
-      formulaThis <- formulaPZ
-      
-      numparam <- 5
-      
-    }else if(modelvec[i]=="PZI"){
-      pcfg$parInit <- parInitPZI()
-      pcfg$parLower <- parLowerPZI()
-      pcfg$parUpper <- parUpperPZI()
-      pcfg$parGrid <- parGridPZI()
-      
-      funcForm <- funcPZI
-      funcFRForm <- funcFRPZI
-      residForm <- residFuncPZI
-      formulaThis <- formulaPZI
-      
-      numparam <- 3
-      
-    }else if(modelvec[i]=="Logi"){
-      pcfg$parInit <- parInitLogi()
-      pcfg$parLower <- parLowerLogi()
-      pcfg$parUpper <- parUpperLogi()
-      pcfg$parGrid <- parGridLogi()
-      
-      funcForm <- funcLogi
-      funcFRForm <- funcFRLogi
-      residForm <- residFuncLogi
-      formulaThis <- formulaLogi
-      
-      numparam <- 3
-    }else if(modelvec[i]=="JM"){
-      pcfg$parInit <- parInitJM()
-      pcfg$parLower <- parLowerJM()
-      pcfg$parUpper <- parUpperJM()
-      pcfg$parGrid <- parGridJM()
-      
-      funcForm <- funcJM
-      residForm <- residFuncJM
-      formulaThis <- formulaJM
-      parmEstThis <- parmEstJM
-      
-      numparam <- 2
-    }else if(modelvec[i]=="GEO"){
-      pcfg$parInit <- parInitGEO()
-      pcfg$parLower <- parLowerGEO()
-      pcfg$parUpper <- parUpperGEO()
-      pcfg$parGrid <- parGridGEO()
-      
-      funcForm <- funcGEO
-      residForm <- residFuncGEO
-      formulaThis <- formulaGEO
-      parmEstThis <- parmEstGEO
-      
-      numparam <- 2
-    }else if(modelvec[i]=="MB"){
-      pcfg$parInit <- parInitMB()
-      pcfg$parLower <- parLowerMB()
-      pcfg$parUpper <- parUpperMB()
-      pcfg$parGrid <- parGridMB()
-      
-      funcForm <- funcMB
-      residForm <- residFuncMB
-      formulaThis <- formulaMB
-      
-      numparam <- 2
-    }else if(modelvec[i]=="LV"){
-      pcfg$parInit <- parInitLV()
-      pcfg$parLower <- parLowerLV()
-      pcfg$parUpper <- parUpperLV()
-      pcfg$parGrid <- parGridLV()
-      
-      funcForm <- funcLV
-      residForm <- residFuncLV
-      formulaThis <- formulaLV
-      
-      numparam <- 3
-    }else{
-      stopifnot(FALSE)
-    }
-    
-    parmlist <- NULL
-    
-    retparam <- paramEstimation(dflearnsub,pcfg,residForm,formulaThis)
-    if(!is.null(retparam)){
-      parmlist <- retparam
-    }
-    
-    if(is.null(parmlist)){
-      estimated <- rep(NA,times = predh)
-      frestimated <- rep(NA,times = predh)
-    }else{
-      estimated <- funcForm(parmlist,c(1:predh))
-      frestimated <- funcFRForm(parmlist,c(1:predh))
-      estimated <- ifelse(estimated<0,0,estimated)
-      frestimated <- ifelse(frestimated<0,0,frestimated)
-    }
-    
-    retlist[[modelvec[i]]] <- list()
-    retlist[[modelvec[i]]]$NumParam <- numparam
-    retlist[[modelvec[i]]]$EstElap <- estimated
-    retlist[[modelvec[i]]]$EstFr <- frestimated
+    retlist[[modelvec[i]]] <- getSRGMEstOrigSingle(modelvec[i],
+                                                   dflearn,
+                                                   trainh,
+                                                   predh)
   }
   
   return(retlist)
 }
 
+getSRGMEstOrigSingle <- function(currmodel,
+                                 dflearn,
+                                 trainh,
+                                 predh){
+  
+  retparam <- NULL
+  estimated <- NULL
+  frestimated <- NULL
+  
+  numparam <- 0
+  
+  pcfg <- list()
+  
+  pcfg$miter <- 1000
+  pcfg$algo <- "Best"
+  
+  funcForm <- NULL
+  funcFRForm <- NULL
+  residForm <- NULL
+  formulaThis <- NULL
+  parmEstThis <- NULL
+  
+  if (currmodel=="GO") {
+    pcfg$parInit <- parInitGO()
+    pcfg$parLower <- parLowerGO()
+    pcfg$parUpper <- parUpperGO()
+    pcfg$parGrid <- parGridGO()
+    
+    funcForm <- funcGO
+    funcFRForm <- funcFRGO
+    residForm <- residFuncGO
+    formulaThis <- formulaGO
+    
+    numparam <- 2
+    
+  }else if(currmodel=="GG"){
+    pcfg$parInit <- parInitGG()
+    pcfg$parLower <- parLowerGG()
+    pcfg$parUpper <- parUpperGG()
+    pcfg$parGrid <- parGridGG()
+    
+    funcForm <- funcGG
+    funcFRForm <- funcFRGG
+    residForm <- residFuncGG
+    formulaThis <- formulaGG
+    
+    numparam <- 3
+    
+  }else if(currmodel=="Gompz"){
+    pcfg$parInit <- parInitGompz()
+    pcfg$parLower <- parLowerGompz()
+    pcfg$parUpper <- parUpperGompz()
+    pcfg$parGrid <- parGridGompz()
+    
+    funcForm <- funcGompz
+    funcFRForm <- funcFRGompz
+    residForm <- residFuncGompz
+    formulaThis <- formulaGompz
+    
+    numparam <- 3
+    
+  }else if(currmodel=="ISS"){
+    pcfg$parInit <- parInitISS()
+    pcfg$parLower <- parLowerISS()
+    pcfg$parUpper <- parUpperISS()
+    pcfg$parGrid <- parGridISS()
+    
+    funcForm <- funcISS
+    funcFRForm <- funcFRISS
+    residForm <- residFuncISS
+    formulaThis <- formulaISS
+    
+    numparam <- 3
+    
+  }else if(currmodel=="MD"){
+    pcfg$parInit <- parInitMD()
+    pcfg$parLower <- parLowerMD()
+    pcfg$parUpper <- parUpperMD()
+    pcfg$parGrid <- parGridMD()
+    
+    funcForm <- funcMD
+    funcFRForm <- funcFRMD
+    residForm <- residFuncMD
+    formulaThis <- formulaMD
+    
+    numparam <- 3
+    
+  }else if(currmodel=="MO"){
+    pcfg$parInit <- parInitMO()
+    pcfg$parLower <- parLowerMO()
+    pcfg$parUpper <- parUpperMO()
+    pcfg$parGrid <- parGridMO()
+    
+    funcForm <- funcMO
+    funcFRForm <- funcFRMO
+    residForm <- residFuncMO
+    formulaThis <- formulaMO
+    
+    numparam <- 2
+    
+  }else if(currmodel=="YID1"){
+    pcfg$parInit <- parInitYID1()
+    pcfg$parLower <- parLowerYID1()
+    pcfg$parUpper <- parUpperYID1()
+    pcfg$parGrid <- parGridYID1()
+    
+    funcForm <- funcYID1
+    funcFRForm <- funcFRYID1
+    residForm <- residFuncYID1
+    formulaThis <- formulaYID1
+    
+    numparam <- 3
+    
+  }else if(currmodel=="YID2"){
+    pcfg$parInit <- parInitYID2()
+    pcfg$parLower <- parLowerYID2()
+    pcfg$parUpper <- parUpperYID2()
+    pcfg$parGrid <- parGridYID2()
+    
+    funcForm <- funcYID2
+    funcFRForm <- funcFRYID2
+    residForm <- residFuncYID2
+    formulaThis <- formulaYID2
+    
+    numparam <- 3
+    
+  }else if(currmodel=="DSS"){
+    pcfg$parInit <- parInitDSS()
+    pcfg$parLower <- parLowerDSS()
+    pcfg$parUpper <- parUpperDSS()
+    pcfg$parGrid <- parGridDSS()
+    
+    funcForm <- funcDSS
+    funcFRForm <- funcFRDSS
+    residForm <- residFuncDSS
+    formulaThis <- formulaDSS
+    
+    numparam <- 2
+    
+  }else if(currmodel=="PNZ"){
+    pcfg$parInit <- parInitPNZ()
+    pcfg$parLower <- parLowerPNZ()
+    pcfg$parUpper <- parUpperPNZ()
+    pcfg$parGrid <- parGridPNZ()
+    
+    funcForm <- funcPNZ
+    funcFRForm <- funcFRPNZ
+    residForm <- residFuncPNZ
+    formulaThis <- formulaPNZ
+    
+    numparam <- 4
+    
+  }else if(currmodel=="PZ"){
+    pcfg$parInit <- parInitPZ()
+    pcfg$parLower <- parLowerPZ()
+    pcfg$parUpper <- parUpperPZ()
+    pcfg$parGrid <- parGridPZ()
+    
+    funcForm <- funcPZ
+    funcFRForm <- funcFRPZ
+    residForm <- residFuncPZ
+    formulaThis <- formulaPZ
+    
+    numparam <- 5
+    
+  }else if(currmodel=="PZI"){
+    pcfg$parInit <- parInitPZI()
+    pcfg$parLower <- parLowerPZI()
+    pcfg$parUpper <- parUpperPZI()
+    pcfg$parGrid <- parGridPZI()
+    
+    funcForm <- funcPZI
+    funcFRForm <- funcFRPZI
+    residForm <- residFuncPZI
+    formulaThis <- formulaPZI
+    
+    numparam <- 3
+    
+  }else if(currmodel=="Logi"){
+    pcfg$parInit <- parInitLogi()
+    pcfg$parLower <- parLowerLogi()
+    pcfg$parUpper <- parUpperLogi()
+    pcfg$parGrid <- parGridLogi()
+    
+    funcForm <- funcLogi
+    funcFRForm <- funcFRLogi
+    residForm <- residFuncLogi
+    formulaThis <- formulaLogi
+    
+    numparam <- 3
+  }else if(currmodel=="JM"){
+    pcfg$parInit <- parInitJM()
+    pcfg$parLower <- parLowerJM()
+    pcfg$parUpper <- parUpperJM()
+    pcfg$parGrid <- parGridJM()
+    
+    funcForm <- funcJM
+    residForm <- residFuncJM
+    formulaThis <- formulaJM
+    parmEstThis <- parmEstJM
+    
+    numparam <- 2
+  }else if(currmodel=="GEO"){
+    pcfg$parInit <- parInitGEO()
+    pcfg$parLower <- parLowerGEO()
+    pcfg$parUpper <- parUpperGEO()
+    pcfg$parGrid <- parGridGEO()
+    
+    funcForm <- funcGEO
+    residForm <- residFuncGEO
+    formulaThis <- formulaGEO
+    parmEstThis <- parmEstGEO
+    
+    numparam <- 2
+  }else if(currmodel=="MB"){
+    pcfg$parInit <- parInitMB()
+    pcfg$parLower <- parLowerMB()
+    pcfg$parUpper <- parUpperMB()
+    pcfg$parGrid <- parGridMB()
+    
+    funcForm <- funcMB
+    residForm <- residFuncMB
+    formulaThis <- formulaMB
+    
+    numparam <- 2
+  }else if(currmodel=="LV"){
+    pcfg$parInit <- parInitLV()
+    pcfg$parLower <- parLowerLV()
+    pcfg$parUpper <- parUpperLV()
+    pcfg$parGrid <- parGridLV()
+    
+    funcForm <- funcLV
+    residForm <- residFuncLV
+    formulaThis <- formulaLV
+    
+    numparam <- 3
+  }else{
+    stopifnot(FALSE)
+  }
+  
+  parmlist <- NULL
+  
+  retparam <- paramEstimation(dflearn[1:trainh],pcfg,residForm,formulaThis)
+  if(!is.null(retparam)){
+    parmlist <- retparam
+  }
+  
+  if(is.null(parmlist)){
+    estimated <- rep(NA,times = predh)
+    frestimated <- rep(NA,times = predh)
+  }else{
+    estimated <- funcForm(parmlist,c(1:predh))
+    frestimated <- funcFRForm(parmlist,c(1:predh))
+    estimated <- ifelse(estimated<0,0,estimated)
+    frestimated <- ifelse(frestimated<0,0,frestimated)
+  }
+  
+  retlist <- list()
+  retlist$NumParam <- numparam
+  retlist$EstElap <- estimated
+  retlist$EstFr <- frestimated
+  
+  return(retlist)
+}
 
 
 
@@ -1883,6 +1891,177 @@ getSRGMGOFOrig <-function(df,pEst,
   
   crivec <- c('EP','MEOP')
     
+  for(j in 1:length(crivec)){
+    
+    valvec  <- retinstance[,crivec[j]]
+    
+    if(length(valvec)>1){
+      
+      infidx <- which(is.infinite(valvec))
+      
+      noinfsub <- NULL
+      if(length(infidx)!=0){
+        noinfsub <- valvec[-c(infidx)]
+      }else{
+        noinfsub <- valvec
+      }
+      
+      minval <- min(noinfsub)
+      maxval <- max(noinfsub)
+      
+      denominator <- maxval-minval
+      
+      nmzvec <- vector()
+      for (k in 1:length(valvec)) {
+        if(is.infinite(valvec[k])){
+          nmzvec[k] <- 0
+        }else{
+          if(denominator==0){
+            nmzvec[k] <- 1
+          }else{
+            nmzvec[k] <- 0.1 + ((maxval - valvec[k])*0.9)/denominator
+          }
+        }
+      }
+      retinstance[paste0("N",crivec[j])] <- nmzvec
+    }else if(length(valvec)==1){
+      retinstance[paste0("N",crivec[j])] <- c(1)
+    }
+  }
+  
+  return(retinstance)
+}
+
+getSRGMGOFOrigExt <-function(df,pEst,
+                          modelvec,
+                          gofvec,
+                          trainh,predh){
+  
+  pc <- 0.2
+  
+  leftmatrix <- NULL
+  rightmatrix <- NULL
+  rightmatrix2 <- NULL
+  lastmatrix <- NULL
+  
+  leftmatrix <- matrix(nrow=length(modelvec),ncol=1)
+  rightmatrix <- matrix(nrow=length(modelvec),ncol=(length(gofvec)-1))
+  rightmatrix2 <- matrix(nrow=length(modelvec),ncol=1)
+  lastmatrix <- matrix(nrow=length(modelvec),ncol=2)
+  
+  observed <- NULL
+  observed <- df$n
+  
+  for(i in 1:length(modelvec)){
+    
+    currmodel <- modelvec[i] #current model name
+    
+    estimated <- NULL
+    frestimated <- NULL
+    numparam <- 0
+    
+    pEstsub <- pEst[[currmodel]]
+    estimated <- pEstsub$EstElap
+    frestimated <- pEstsub$EstFr
+    
+    numparam <- pEstsub$NumParam
+    
+    currrowidx  <- i
+    
+    leftmatrix[currrowidx,1] <- currmodel
+    
+    rightmatrix[currrowidx,1] <- FC.MSE(trainh,numparam,observed,estimated)
+    rightmatrix[currrowidx,2] <- FC.MAE(trainh,numparam,observed,estimated)
+    rightmatrix[currrowidx,3] <- FC.Rsquare(trainh,observed,estimated)
+    rightmatrix[currrowidx,4] <- FC.Noise(trainh,frestimated)
+    rightmatrix[currrowidx,5] <- FC.Bias(1,trainh,observed,estimated)
+    rightmatrix[currrowidx,6] <- FC.Variation(trainh,observed,estimated)
+    rightmatrix[currrowidx,7] <- FC.PRR(trainh,observed,estimated)
+    rightmatrix[currrowidx,8] <- FC.WLSE(trainh,observed,estimated,pc)
+    rightmatrix[currrowidx,9] <- FC.EP(trainh,observed,estimated)
+    rightmatrix[currrowidx,10] <- FC.MEOP(1,trainh,observed,estimated)
+    rightmatrix[currrowidx,11] <- FC.TOUP(trainh,observed,estimated)
+    rightmatrix[currrowidx,12] <- abs(FC.Bias(1,trainh,observed,estimated))
+    
+    rightmatrix2[currrowidx,1] <- GROUP(FC.Bias(trainh,predh,observed,estimated))
+    
+    lastmatrix[currrowidx,1] <- FC.EP(predh,observed,estimated)
+    lastmatrix[currrowidx,2] <- FC.MEOP(trainh,predh,observed,estimated)
+  }
+  
+  leftdf <- data.frame(leftmatrix)
+  names(leftdf) <- c('Model')
+  
+  rightdf <- data.frame(rightmatrix)
+  names(rightdf) <- gofvec[1:(length(gofvec)-1)]
+  
+  rightdf2 <- data.frame(rightmatrix2)
+  names(rightdf2) <- gofvec[c(length(gofvec))]
+  
+  lastdf <- data.frame(lastmatrix)
+  names(lastdf) <- c('EP','MEOP')
+  
+  retinstance <- cbind(leftdf,rightdf,rightdf2,lastdf)
+  
+  retinstance <- na.omit(retinstance)
+  
+  for(j in 1:(length(gofvec)-1)){
+    
+    valvec  <- retinstance[,gofvec[j]]
+    
+    if(length(valvec)>1){
+      
+      infidx <- which(is.infinite(valvec))
+      
+      noinfsub <- NULL
+      if(length(infidx)>0){
+        noinfsub <- valvec[-c(infidx)]
+      }else{
+        noinfsub <- valvec
+      }
+      
+      minval <- min(noinfsub)
+      maxval <- max(noinfsub)
+      
+      denominator <- maxval-minval
+      
+      nmzvec <- vector()
+      for (k in 1:length(valvec)) {
+        if(is.infinite(valvec[k])){
+          if(gofvec[j]=="Rsquare"){
+            nmzvec[k] <- 1
+          }else{
+            nmzvec[k] <- 0
+          }
+        }else{
+          if(denominator==0){
+            if(gofvec[j]=="Rsquare"){
+              nmzvec[k] <- 0
+            }else{
+              nmzvec[k] <- 1
+            }
+          }else{
+            if(gofvec[j]=="Rsquare"){
+              nmzvec[k] <- 0 + ((maxval - valvec[k])*0.9)/denominator
+            }else{
+              nmzvec[k] <- 0.1 + ((maxval - valvec[k])*0.9)/denominator
+            }
+          }
+        }
+      }
+      retinstance[paste0("N",gofvec[j])] <- nmzvec
+      
+    }else if(length(valvec)==1){
+      if(gofvec[j]=="Rsquare"){
+        retinstance[paste0("N",gofvec[j])] <- c(0)
+      }else{
+        retinstance[paste0("N",gofvec[j])] <- c(1)
+      }
+    }
+  }
+  
+  crivec <- c('EP','MEOP')
+  
   for(j in 1:length(crivec)){
     
     valvec  <- retinstance[,crivec[j]]

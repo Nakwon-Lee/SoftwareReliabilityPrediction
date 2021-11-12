@@ -4,7 +4,7 @@
 setting1LOO <- function(goflist,ngoflist,
                         pEst,datalist,
                         gofregvec,gofclvec,
-                        totpert,roundc,
+                        totpert,
                         targets,targetcl,
                         measures,isFCTBF){
   
@@ -66,7 +66,7 @@ setting1LOO <- function(goflist,ngoflist,
       }else{
         
         adtreemd <- setting1traincl(trainset[,c(gofclvec,targetcl)],gofclvec,targetcl)
-        underover <- setting1predictcl(adtreemd,gofclvec,testsetsub)
+        underover <- setting1predictcl(adtreemd,testsetsub)
         
         for (k in 1:length(measures)) {
           rpartEP <- setting1train(trainsetsub,gofregvec,targets[k])
@@ -81,8 +81,8 @@ setting1LOO <- function(goflist,ngoflist,
             testcurr.ordered.top <- testcurr.ordered
           }
           
-          pEst[[picked]][[roundc]][[currpert]][["dummy"]] <- list()
-          pEst[[picked]][[roundc]][[currpert]][["dummy"]]$EstElap <- rep(0,times = length(observed))
+          pEst[[currpert]][[picked]][["dummy"]] <- list()
+          pEst[[currpert]][[picked]][["dummy"]]$EstElap <- rep(0,times = length(observed))
           
           under <- list()
           under$Model <- "dummy"
@@ -110,7 +110,7 @@ setting1LOO <- function(goflist,ngoflist,
           
           if(under$Model == "dummy" && over$Model == "dummy"){
             
-            pEstsub <- pEst[[picked]][[roundc]][[currpert]]
+            pEstsub <- pEst[[currpert]][[picked]]
             pEstsub.this <- NULL
             
             pEstsub.this <- pEstsub[[testcurr.ordered.top[1,"Model"]]]$EstElap
@@ -119,7 +119,7 @@ setting1LOO <- function(goflist,ngoflist,
             
           }else{
             # prediction using under and over weights
-            pEstsub <- pEst[[picked]][[roundc]][[currpert]]
+            pEstsub <- pEst[[currpert]][[picked]]
             pEstsub.Under <- NULL
             pEstsub.Over <- NULL
             pEstsub.Under <- pEstsub[[under$Model]]$EstElap
@@ -132,24 +132,23 @@ setting1LOO <- function(goflist,ngoflist,
           # print(pEstsub[[testcurr.ordered.top[1,"Model"]]]$EstElap)
           # print(testcurr.ordered.top[1,"Model"])
           # print(testcurr.ordered.top[1,"Pred"])
-
           
           if(measures[k]=="EP"){
             tep <- FC.EP(length(observed),observed,wavgEst)
             csvmat[(((i-1)*totpert)+j),k] <- tep
-            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- normVal(tep,ngoflist[[picked]][ngoflist[[picked]]$Pert==currpert,"EP"])
+            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- tep
           }else if(measures[k]=="PE"){
             tpe <- TBF.PE(length(observed),observed,wavgEst)
             csvmat[(((i-1)*totpert)+j),k] <- tpe
-            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- normVal(tpe,ngoflist[[picked]][ngoflist[[picked]]$Pert==currpert,"PE"])
+            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- tpe
           }else if(measures[k]=="MEOP"){
             tmeop <- FC.MEOP(pEstsub$trainH,length(observed),observed,wavgEst)
             csvmat[(((i-1)*totpert)+j),k] <- tmeop
-            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- normVal(tmeop,ngoflist[[picked]][ngoflist[[picked]]$Pert==currpert,"MEOP"])
+            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- tmeop
           }else if(measures[k]=="AE"){
             tae <- TBF.AE(pEstsub$trainH,length(observed),observed,wavgEst)
             csvmat[(((i-1)*totpert)+j),k] <- tae
-            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- normVal(tae,ngoflist[[picked]][ngoflist[[picked]]$Pert==currpert,"AE"])
+            csvmat[(((i-1)*totpert)+j),(k+length(measures))] <- tae
           }
         }
       }

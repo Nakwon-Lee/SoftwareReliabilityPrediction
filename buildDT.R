@@ -11,9 +11,9 @@ setting1traincl <- function(ptrain,vars,target){
   # ADTree <- make_Weka_classifier("weka/classifiers/trees/ADTree")
   # adtmodel <- ADTree(targetformula,data=ptrain)
   
-  # adtmodel <- best.svm(targetformula,data=ptrain)
+  # adtmodel <- svm(targetformula,data=ptrain)
   
-  adtmodel <- rpart(targetformula,data=ptrain)
+  # adtmodel <- rpart(targetformula,data=ptrain)
   
   # adtmodel <- best.randomForest(targetformula,data=ptrain)
   
@@ -21,6 +21,9 @@ setting1traincl <- function(ptrain,vars,target){
   
   # REPTree <- make_Weka_classifier("weka/classifiers/trees/REPTree")
   # adtmodel <- REPTree(targetformula,data=ptrain)
+  
+  # adtmodel <- neuralnet(targetformula,data=ptrain,linear.output = FALSE,
+  #                       hidden = c(3,2))
   
   return(adtmodel)
 }
@@ -72,9 +75,23 @@ settingDGStraincl <- function(ptrain,vars,target){
   
   # adtmodel <- best.svm(targetformula,data=ptrain)
   
-  adtmodel <- rpart(targetformula,data=ptrain,method="class")
+  # adtmodel <- rpart(targetformula,data=ptrain,method="class")
   
-  # adtmodel <- best.randomForest(targetformula,data=ptrain)
+  costvec <- 2^(-5:15)
+  gammavec <- 2^(-15:3)
+  
+  adtmodel <- best.svm(targetformula,data = ptrain,kernel = 'radial',type = 'C-classification',
+                       tunecontrol = tune.control(sampling = 'cross',cross = 10),
+                       cost = costvec,gamma = gammavec)
+  
+  # adtmodel <- randomForest(targetformula,data=ptrain,method="class")
+  
+  # adtmodel <- tuneRF(ptrain[,vars],ptrain[,target],method="class",
+  #                    doBest = TRUE,stepFactor = 0.5,
+  #                    improve = 0.01,
+  #                    ntreeTry = 100,
+  #                    trace = FALSE,
+  #                    plot = FALSE)
   
   # adtmodel <- lm(targetformula,data=ptrain)
   
@@ -82,6 +99,38 @@ settingDGStraincl <- function(ptrain,vars,target){
   # adtmodel <- REPTree(targetformula,data=ptrain)
   
   return(adtmodel)
+}
+
+settingRESEDAtrainRg <- function(ptrain,vars,target){
+  right <- vars[1]
+  if(length(vars)>1){
+    for (i in 2:length(vars)){
+      right <- paste0(right,"+",vars[i])
+    }
+  }
+  
+  targetformula <- as.formula(paste0(target,"~",right))
+  
+  costvec <- 2^(-5:15)
+  gammavec <- 2^(-15:3)
+
+  regmodel <- best.svm(targetformula,data = ptrain,kernel = 'sigmoid',type = 'eps-regression',
+                       tunecontrol = tune.control(sampling = 'cross',cross = 10),
+                       cost = costvec,gamma = gammavec)
+  
+  return(regmodel)
+}
+
+settingRESEDApredictRg <- function(fittedtree,df){
+  retbest <- NULL
+  
+  for(i in 1:nrow(df)){
+    df[i,"Pred"] <- predict(fittedtree,df[i,])
+  }
+  
+  retbest <- df
+  
+  return(retbest)
 }
 
 setting1predictcl <- function(fittedtree,df){

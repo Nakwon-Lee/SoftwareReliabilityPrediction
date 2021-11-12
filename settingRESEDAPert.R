@@ -2,38 +2,108 @@ settingRESEDAPert <- function(pdflist,pgoffts,pmetafts,
                               pcri,pmodelvec,
                               pgaparam,cpert,
                               pddmestlist,
-                              psrgmestlist){
+                              psrgmestlist,
+                              pmodelforddm,
+                              evalGen,preDict,
+                              histdf=NULL,
+                              evalfts){
   
   resultvec <- vector()
+  selvec <- vector()
   
   for (i in 1:length(pdflist)) {
-    print(i)
+    cat(i)
     
     picked <- c(i)
     
     targetdf <- pdflist[[picked]]
     
-    evaluator <- evaluatorGenRESEDA(pdflist = pdflist[-picked],pgoffts = pgoffts,
+    evaluator <- evalGen(pdflist = pdflist[-picked],pgoffts = pgoffts,
                                     pmetafts = pmetafts,
                                     ppert = cpert,
                                     pcri = pcri,
                                     pmodelvec = pmodelvec,
-                                    pddmmodel = 'SVR',pgaparam = pgaparam,
+                                    pddmmodel = pmodelforddm,pgaparam = pgaparam,
                                     pddmestlist = pddmestlist[-picked],
-                                    psrgmestlist = psrgmestlist[-picked])
-    print('get evaluator')
+                                    psrgmestlist = psrgmestlist[-picked],
+                         evalfts=evalfts)
     
     hori <- horiCalculator(cpert,nrow(targetdf))
     
-    estimated <- predictionRESEDA(pevaluator = evaluator,ptargetdf = targetdf[1:hori$fit,],
+    predresult <- preDict(pevaluator = evaluator,ptargetdf = targetdf[1:hori$fit,],
                                   ppert = cpert,
                                   pmodelvec = pmodelvec,pdflist = pdflist[-picked],
                                   pcri = pcri,pgoffts = pgoffts,
-                                  pmetafts = pmetafts,pddmmodel = 'SVR',
+                                  pmetafts = pmetafts,pddmmodel = pmodelforddm,
                                   pfith = hori$fit,ppredh = hori$pred,
                                   psrgmestlist = psrgmestlist[-picked],
                                   ptargetddmest = pddmestlist[[picked]],
                                   ptargetsrgmest = psrgmestlist[[picked]])
+    estimated <- predresult$estimated
+    
+    if (pcri=='EP'){
+      crival <- FC.EP(hori$pred,targetdf$n,estimated$EstElap)
+    }else if (pcri=='MEOP'){
+      crival <- FC.MEOP(hori$fit,hori$pred,targetdf$n,estimated$EstElap)
+    }
+    
+    stopifnot(!is.na(crival))
+    
+    resultvec[(length(resultvec)+1)] <- crival
+    selvec[(length(selvec)+1)] <- predresult$sel
+  }
+  
+  if (!is.null(histdf)){
+    histdfsub <- histdf[which(histdf$Pert==cpert),]
+    
+    stopifnot(nrow(histdfsub)==length(selvec))
+    
+    colsel <- paste0(pcri,'.SEL')
+    
+    totcount <- nrow(histdfsub)
+    gofcount <- length(which(histdfsub[,colsel]=='GOF'))
+    ddmcount <- length(which(histdfsub[,colsel]=='DDM'))
+    
+    crtcount <- length(which(histdfsub[,colsel]==selvec))
+    crcntgof <- length(which(histdfsub[,colsel]==selvec & histdfsub[,colsel]=='GOF'))
+    crcntddm <- length(which(histdfsub[,colsel]==selvec & histdfsub[,colsel]=='DDM'))
+
+    print(c('acc:',(crtcount/totcount)))
+    print(c('acc.gof:',(crcntgof/gofcount)))
+    print(c('acc.ddm:',(crcntddm/ddmcount)))
+  }
+  
+  retdf <- data.frame(resultvec)
+  colnames(retdf) <- c(pcri)
+  
+  print(c(pcri,median(retdf[,pcri])))
+  
+  return(retdf)
+}
+
+settingRESEDAv2Pert <- function(pdflist,pddmmodel,ppert,pgoffts,pcri,pmodelvec,pddmestlist=NULL){
+  
+  datadrivenest <- pddmestlist
+  if (is.null(datadrivenest)){
+    datadrivenest <- dataDriven(pdflist,pddmmodel,ppert)
+  }
+  print('end datadriven')
+  
+  resultvec <- vector()
+  
+  for (i in 1:length(pdflist)) {
+    
+    print(i)
+    
+    targetdf <- pdflist[[i]]
+    
+    hori <- horiCalculator(ppert,nrow(targetdf))
+    
+    estimated <- predictionRESEDAv2(targetdf,pddmmodel,
+                                    hori$fit,hori$pred,
+                                    pmodelvec,pgoffts,
+                                    ptargetddmest=datadrivenest[[i]])
+    
     print('get RESEDA result')
     
     if (pcri=='EP'){
@@ -106,6 +176,56 @@ evaluatorGenRESEDA <- function(pdflist,pgoffts,pmetafts,ppert,
   return(evaluator)
 }
 
+evaluatorGenRESEDAv2 <- function(pdflist,pgoffts,pmetafts,ppert,
+                               pcri,pmodelvec,pddmmodel,
+                               pgaparam,
+                               pddmestlist=NULL,
+                               psrgmestlist=NULL,
+                               evalfts){
+  
+  cmodelsest <- psrgmestlist
+  if (is.null(cmodelsest)){
+    cmodelsest <- modelFitting(pdflist,pmodelvec,ppert)
+  }
+  # print('end modelfit')
+  
+  cgofnlist <- calcGOF(pdflist,cmodelsest,pmodelvec,pgoffts,ppert)
+  # print('end calcGOF')
+  
+  mselectedlist <- modelSelection(cgofnlist,paste0('N',pgoffts),paste0('N',pcri))
+  modelselres <- list()
+  for (i in 1:length(mselectedlist)) {
+    modelselres[[i]] <- cgofnlist[[i]][which(cgofnlist[[i]][,'Model']==mselectedlist[[i]]),]
+  }
+  # print('end model selection')
+  
+  datadrivenest <- pddmestlist
+  if (is.null(datadrivenest)){
+    datadrivenest <- dataDriven(pdflist,pddmmodel,ppert)
+  }
+  # print('end datadriven')
+  
+  datadrivenres <- calcGOFDDM(datadrivenest,pdflist,ppert,pgoffts)
+  # print('end calcGOFDDM')
+  
+  metares <- calcMeta(pdflist,pmetafts,ppert)
+  # print('end calcMeta')
+  
+  histdatalist <- list()
+  for (i in 1:length(modelselres)) {
+    tempdf <- cbind(datadrivenres[[i]],metares[[i]])
+    tempdf[1,'SEL'] <- ifelse(modelselres[[i]][1,pcri]>=datadrivenres[[i]][1,pcri],'DDM','GOF')
+    tempdf[1,'DIFF'] <- modelselres[[i]][1,pcri] - datadrivenres[[i]][1,pcri]
+    histdatalist[[i]] <- tempdf
+  }
+  # print('end get hist data')
+  
+  evaluator <- settingDGStraincl(listrbinder(histdatalist),evalfts,'SEL')
+  # evaluator <- settingRESEDAtrainRg(listrbinder(histdatalist),evalfts,'DIFF')
+  
+  return(evaluator)
+}
+
 predictionRESEDA <- function(pevaluator,ptargetdf,ppert,
                              pdflist,pmodelvec,pcri,pgoffts,pmetafts,pddmmodel,
                              pfith,ppredh,
@@ -117,17 +237,19 @@ predictionRESEDA <- function(pevaluator,ptargetdf,ppert,
   if (is.null(datadrivenest)){
     datadrivenest <- getDDMEstOrig(ptargetdf,pddmmodel,pfith,ppredh)
   }
-  print('pred: end ddm est')
+  # print('pred: end ddm est')
   
   datadrivenres <- getDDMGOFforaData(datadrivenest,ptargetdf,pfith,pfith,pddmmodel,pgoffts)
-  print('pred: end ddm gof')
+  # print('pred: end ddm gof')
   
   metares <- getMETAInfoOrig(ptargetdf,pmetafts,pfith)
-  print('pred: end meta')
+  # print('pred: end meta')
   
   selorddm <- setting1predictcl(pevaluator,cbind(datadrivenres,metares))
   selectionres <- ifelse(selorddm[1,'Pred']=='GOF','GOF','DDM')
-  print('pred: end selection')
+  # selorddm <- settingRESEDApredictRg(pevaluator,cbind(datadrivenres,metares))
+  # selectionres <- ifelse(selorddm[1,'Pred']<0,'GOF','DDM')
+  # print('pred: end selection')
   
   if (selectionres=='GOF'){
     
@@ -135,37 +257,60 @@ predictionRESEDA <- function(pevaluator,ptargetdf,ppert,
     if (is.null(modelest)){
       modelest <- getSRGMEstOrig(ptargetdf,pmodelvec,pfith,ppredh)
     }
-    print('pred gof: end srgm est')
+    # print('pred gof: end srgm est')
     
     modelgof <- getSRGMGOFOrig(ptargetdf,modelest,pmodelvec,pgoffts,pfith,pfith)
-    print('pred gof: end srgm gof')
+    # print('pred gof: end srgm gof')
     
     cmodelsest <- psrgmestlist
     if (is.null(cmodelsest)){
       cmodelsest <- modelFitting(pdflist,pmodelvec,ppert)
     }
-    print('pred gof: end modelfitting')
+    # print('pred gof: end modelfitting')
     
     cgofnlist <- calcGOF(pdflist,cmodelsest,pmodelvec,pgoffts,ppert)
-    print('pred gof: end calcGOF')
+    # print('pred gof: end calcGOF')
     
     mselected <- setting111LOOPert(cgofnlist,modelgof,pgoffts,pcri)
-    print('pred gof: end model selection')
+    # print('pred gof: end model selection')
     
-    return(modelest[[mselected]])
+    return(list(estimated=modelest[[mselected]],sel='GOF'))
     
   }else if (selectionres=='DDM'){
     augtargetdf <- data.frame(n=c(ptargetdf$n[1:pfith],datadrivenest$SVR$EstElap[(pfith+1):ppredh]))
     modelest <- getSRGMEstOrig(augtargetdf,pmodelvec,ppredh,ppredh)
-    print('pred ddm: end srgmfromddmest')
+    # print('pred ddm: end srgmfromddmest')
     
     srgmgoffromddm <- getSRGMGOFOrig(augtargetdf,modelest,pmodelvec,pgoffts,ppredh,ppredh)
-    print('pred ddm: end srgmfromddmgof')
+    # print('pred ddm: end srgmfromddmgof')
     
     srgmgoffromddm <- srgmgoffromddm[order(srgmgoffromddm$MSE),]
     
-    return(modelest[[srgmgoffromddm[1,'Model']]])
+    return(list(estimated=modelest[[srgmgoffromddm[1,'Model']]],sel='DDM'))
   }
+}
+
+predictionRESEDAv2 <- function(ptargetdf,pddmmodel,pfith,ppredh,pmodelvec,pgoffts,ptargetddmest=NULL){
+  
+  datadrivenest <- ptargetddmest
+  if (is.null(datadrivenest)){
+    datadrivenest <- getDDMEstOrig(ptargetdf,pddmmodel,pfith,ppredh)
+  }
+  print('pred: end ddm est')
+  
+  augtargetdf <- data.frame(n=c(ptargetdf$n[1:pfith],datadrivenest[[pddmmodel]]$EstElap[(pfith+1):ppredh]))
+  modelest <- getSRGMEstOrig(augtargetdf,pmodelvec,ppredh,ppredh)
+  print('pred ddm: end srgmfromddmest')
+  
+  srgmgoffromddm <- getSRGMGOFOrig(augtargetdf,modelest,pmodelvec,pgoffts,ppredh,ppredh)
+  print('pred ddm: end srgmfromddmgof')
+  
+  srgmgoffromddm <- srgmgoffromddm[order(srgmgoffromddm$MSE),]
+  
+  selectedmodel <- gofModelSelection(pgofdf =  srgmgoffromddm,
+                                    pgoffts = pgoffts)
+  
+  return(modelest[[selectedmodel]])
 }
 
 modelFitting <- function(datadflist,modelvec,ppert){
@@ -215,6 +360,31 @@ calcGOFApply <- function(x){
                         trainh = x$hori$fit,predh = x$hori$pred))
 }
 
+calcGOFExt <- function(datadflist,pestlist,pmodelvec,pgofvec,ppert){
+  stopifnot(length(datadflist)==length(pestlist))
+  paramlist <- list()
+  for (i in 1:length(datadflist)) {
+    paramlist[[i]] <- list()
+    paramlist[[i]]$datadf <- datadflist[[i]]
+    paramlist[[i]]$pest <- pestlist[[i]]
+    paramlist[[i]]$pmodelvec <- pmodelvec
+    paramlist[[i]]$pgofvec <- pgofvec
+    paramlist[[i]]$hori <- horiCalculator(ppert,nrow(datadflist[[i]]))
+  }
+  if (Sys.info()['sysname']=='Windows'){
+    return(lapply(paramlist,calcGOFExtApply))
+  }else{
+    return(mclapply(paramlist,calcGOFExtApply,mc.cores = detectCores()))
+  }
+}
+
+calcGOFExtApply <- function(x){
+  return(getSRGMGOFOrigExt(df=x$datadf,pEst=x$pest,
+                        modelvec = x$pmodelvec,
+                        gofvec = x$pgofvec,
+                        trainh = x$hori$fit,predh = x$hori$pred))
+}
+
 calcGOFDDM <- function(pestlist,pdflist,ppert,pgofvec){
   stopifnot(length(pestlist)==length(pdflist))
   paramlist <- list()
@@ -235,6 +405,31 @@ calcGOFDDM <- function(pestlist,pdflist,ppert,pgofvec){
 
 calcGOFDDMApply <- function(x){
   return(getDDMGOFforaData(pEst = x$pest,df=x$pdf,
+                           ptrainh = x$hori$fit,
+                           ppredh = x$hori$pred,
+                           pmodel = x$model,pgoffts = x$pgofvec))
+}
+
+calcGOFDDMExt <- function(pestlist,pdflist,ppert,pgofvec){
+  stopifnot(length(pestlist)==length(pdflist))
+  paramlist <- list()
+  for (i in 1:length(pdflist)) {
+    paramlist[[i]] <- list()
+    paramlist[[i]]$pest <- pestlist[[i]]
+    paramlist[[i]]$pdf <- pdflist[[i]]
+    paramlist[[i]]$hori <- horiCalculator(ppert,nrow(pdflist[[i]]))
+    paramlist[[i]]$model <- 'SVR'
+    paramlist[[i]]$pgofvec <- pgofvec
+  }
+  if (Sys.info()['sysname']=='Windows'){
+    return(lapply(paramlist,calcGOFDDMExtApply))
+  }else{
+    return(mclapply(paramlist,calcGOFDDMExtApply,mc.cores = detectCores()))
+  }
+}
+
+calcGOFDDMExtApply <- function(x){
+  return(getDDMGOFExtforaData(pEst = x$pest,df=x$pdf,
                            ptrainh = x$hori$fit,
                            ppredh = x$hori$pred,
                            pmodel = x$model,pgoffts = x$pgofvec))
@@ -281,6 +476,14 @@ modelSelectionApply <- function(x){
                            targetdf = x$ptdf,
                            gofregvec = x$pgoffts,
                            pcri = x$pcri))
+}
+
+gofModelSelection <- function(pselector=NULL,pgofdf,pgoffts){
+  gofdf <- pgofdf
+  if (is.null(pselector)){
+    gofdf <- gofdf[order(gofdf$MSE),]
+    return(gofdf[1,'Model'])
+  }
 }
 
 dataDriven <- function(pdflist,pmodel,ppert){

@@ -83,7 +83,9 @@ for (i in 1:length(ppertvec)) {
                                                        pmodelvec = c("GO","GG","Gompz","ISS","MD","MO","YID1","YID2","DSS","PNZ","PZ","PZI","Logi"),
                                                             pgaparam = gaparam,cpert = ppertvec[i],
                                                        pddmestlist = tddmestlist[[ppertvec[i]]],
-                                                       psrgmestlist = tsrgmestlist[[ppertvec[i]]])
+                                                       psrgmestlist = tsrgmestlist[[ppertvec[i]]],
+                                                       pmodelforddm = 'SVR',
+                                                       evalGen = evaluatorGenRESEDA,preDict = predictionRESEDA)
 }
 
 save(settingDGSretFCD,file = paste0('RESEDAres',arguments[3],'.RData'))
