@@ -7,18 +7,11 @@ library(minpack.lm)
 library(rpart)
 library(nls2)
 library(e1071)
-library(mlr)
-library(neuralnet)
-library(randomForest)
-library(xgboost)
 library(unbalanced)
-library(RWeka)
-library(RWekajars)
 library(MASS)
 library(pls)
 library(mgcv)
 library(regclass)
-library(FSelector)
 library(GA)
 library(parallel)
 library(foreach)
@@ -30,9 +23,11 @@ library(reticulate)
 
 setwd('~/git/SoftwareReliabilityPrediction')
 
-envfile <- paste0('envQ1.RData')
-print(envfile)
-load(envfile)
+load('envs/data.fcdsrgmestlist.RData')
+load('envs/data.fcdddmestlist.RData')
+load('vdatalist.RData')
+load('vgofddmlist.RData')
+load('vgoflist.RData')
 
 source('setting1code.R')
 source('buildDT.R')
@@ -66,6 +61,7 @@ source('getDDMGOF.R')
 source('parameterEstimation.R')
 source('Criteria.R')
 source('getMETAInfo.R')
+source('getDataPoints.R')
 source('MetaKnow.R')
 source('settingOvsOMC.R')
 
@@ -73,17 +69,15 @@ ppertvec <- c('P7','P8','P9')
 
 settingOvOretFCD <- list()
 for (i in 1:length(ppertvec)) {
-  settingOvOretFCD[[ppertvec[i]]] <- settingOvOMCPert(vFCDlist,vFCDGoflist,vFCDGofDDMlist,vFCDMetalist,
+  settingOvOretFCD[[ppertvec[i]]] <- settingOvOMCPert(vFCDlist,vFCDGoflist,vFCDGofDDMlist,
                                                       ppertvec[i],'EP',
-                                                      c("Variance","Inclination","AutoCorr","MetaNO","NumP","LapFact","SubAddi"),
                                                       c("GO","GG","Gompz","ISS","MD","MO","YID1","YID2","DSS","PNZ","PZ","PZI","Logi","SVR"),
                                                       tddmestlist,tsrgmestlist)
 }
 
 for (i in 1:length(ppertvec)) {
-  settingOvOretFCD[[ppertvec[i]]] <- cbind(settingOvOretFCD[[ppertvec[i]]],settingOvOMCPert(vFCDlist,vFCDGoflist,vFCDGofDDMlist,vFCDMetalist,
+  settingOvOretFCD[[ppertvec[i]]] <- cbind(settingOvOretFCD[[ppertvec[i]]],settingOvOMCPert(vFCDlist,vFCDGoflist,vFCDGofDDMlist,
                                                                                             ppertvec[i],'MEOP',
-                                                                                            c("Variance","Inclination","AutoCorr","MetaNO","NumP","LapFact","SubAddi"),
                                                                                             c("GO","GG","Gompz","ISS","MD","MO","YID1","YID2","DSS","PNZ","PZ","PZI","Logi","SVR"),
                                                                                             tddmestlist,tsrgmestlist))
 }

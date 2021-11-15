@@ -1,5 +1,5 @@
-settingOvOMCPert <- function(pdflist,pgoflist,pddmlist,pmetalist,
-                             cpert,pcri,pmetafts,pmodelvec,
+settingOvOMCPert <- function(pdflist,pgoflist,pddmlist,
+                             cpert,pcri,pmodelvec,
                              pddmestlist,psrgmestlist){
   resultvec <- vector()
   binselvec <- vector()
@@ -159,19 +159,24 @@ selectionOvOMC <- function(targetdf,pmetafts,pmodelvec,phmetadf,pcri,ptargetmeta
     elem1 <- paste0(pcri,'.',modelpairmat[i,1])
     elem2 <- paste0(pcri,'.',modelpairmat[i,2])
     # winvec <- ifelse(phmetadf[,elem1]<phmetadf[,elem2],modelpairmat[i,1],modelpairmat[i,2])
-    winvec <- ifelse(phmetadf[,elem1]<phmetadf[,elem2],1,2)
+    winvec <- ifelse(phmetadf[,elem1]<phmetadf[,elem2],0,1)
     dfforthispair <- phmetadf[,pmetafts]
     # dfforthispair$Class <- as.factor(winvec)
     dfforthispair$Class <- winvec
     
     dfforthispair <- na.omit(dfforthispair)
     
-    imagevec <- vector()
-    for (i in 1:nrow(dfforthispair)) {
-      imagevec <- c(imagevec,c(failuredataToImage(unlist(dfforthispair[i,pmetafts]),length(pmetafts))))
+    imagearr <- array(dim = c(nrow(dfforthispair),length(pmetafts),length(pmetafts)))
+    for (j in 1:nrow(dfforthispair)) {
+      imagearr[j,,] <- c(failuredataToImage(unlist(dfforthispair[j,pmetafts]),length(pmetafts)))
     }
     
-    imagearr <- array(imagevec,dim = c(length(pmetafts),length(pmetafts),nrow(dfforthispair)))
+    # imagevec <- vector()
+    # for (j in 1:nrow(dfforthispair)) {
+    #   imagevec <- c(imagevec,c(failuredataToImage(unlist(dfforthispair[j,pmetafts]),length(pmetafts))))
+    # }
+    # thisdimname = list()
+    # imagearr <- array(imagevec,dim = c(nrow(dfforthispair),length(pmetafts),length(pmetafts)))
     
     labelvec <- dfforthispair$Class
     
@@ -182,12 +187,18 @@ selectionOvOMC <- function(targetdf,pmetafts,pmodelvec,phmetadf,pcri,ptargetmeta
     
     # clmodel <- modelConstruction(dfforthispair,pmetafts,'Class')
     
+    # print(imagearr[1,,])
+    # print(dim(imagearr))
+    # print(labelvec)
+    # print(dim(labelvec))
+    
     clmodel <- modelConstructionImage(imagearr,labelvec,length(pmetafts))
     
     clmodellist[[paste0(modelpairmat[i,1],'.',modelpairmat[i,2])]] <- clmodel
   }
   
-  targetimgarr <- failuredataToImage(unlist(ptargetmetadf[1,pmetafts]),length(pmetafts))
+  targetimgarr <- array(dim = c(1,length(pmetafts),length(pmetafts)))
+  targetimgarr[1,,] <- failuredataToImage(unlist(ptargetmetadf[1,pmetafts]),length(pmetafts))
   
   # return(modelSelection(ptargetmetadf,clmodellist,pmodelvec,pcri,modelpairmat))
   return(modelSelectionImage(ptargetmetadf,targetimgarr,clmodellist,pmodelvec,pcri,modelpairmat))
@@ -203,7 +214,7 @@ modelConstructionImage <- function(pimgarr,plabvec,size){
   model %>%
     layer_flatten(input_shape = c(size, size)) %>%
     layer_dense(units = 128, activation = 'relu') %>%
-    layer_dense(units = 10, activation = 'softmax')
+    layer_dense(units = 2, activation = 'softmax')
   
   model %>% compile(
     optimizer = 'adam', 
@@ -211,7 +222,7 @@ modelConstructionImage <- function(pimgarr,plabvec,size){
     metrics = c('accuracy')
   )
   
-  model %>% fit(pimgarr, plabvec, epochs = 5, verbose = 2)
+  model %>% fit(pimgarr, plabvec, epochs = 5, verbose = 0)
   
   return(model)
 }
@@ -262,14 +273,18 @@ modelSelectionImage <- function(pdataf,pimgarr,pmodellist,pmodelvec,pcri,modelpa
     
     idxname <- paste0(elem1,'.',elem2)
     
-    predval <- pmodellist[[idxname]] %>% predict_classes(pimgarr)
+    predicted <- predict(pmodellist[[idxname]],pimgarr)
+    
+    predval <- which.max(predicted[1,])
     
     if (predval == 1){
       wincountvec[which(pmodelvec==elem1)[1]] <- wincountvec[which(pmodelvec==elem1)[1]] + 1
       retlist$binary[[idxname]] <- elem1
-    }else{
+    }else if (predval == 2){
       wincountvec[which(pmodelvec==elem2)[1]] <- wincountvec[which(pmodelvec==elem2)[1]] + 1
       retlist$binary[[idxname]]<- elem2
+    }else{
+      stop("no valid predicted class")
     }
   }
   
