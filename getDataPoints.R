@@ -104,6 +104,45 @@ getDataPointsSingle <- function(df,cpert,nump){
   return(retlist)
 }
 
+getDataPointsSingleLength <- function(df,trainh,nump){
+  
+  numrows <- trainh
+  
+  observed <- df$n[1:numrows]
+  
+  retlist <- list()
+  
+  normdps <- (observed-min(observed))/(max(observed)-min(observed))
+  
+  retlist$raw <- normdps
+  
+  pointsI <- seq(from=1,to=numrows,length=nump)
+  
+  tdpvec <- vector()
+  
+  tdpvec[1] <- 0
+  for(j in 2:(length(pointsI)-1)){
+    tfloor <- floor(pointsI[j])
+    tceiling <- ceiling(pointsI[j])
+    
+    if((tceiling-tfloor)==0){
+      tdpvec[j] <- normdps[pointsI[j]]
+    }else{
+      tslope <- (normdps[tceiling]-normdps[tfloor])/(tceiling-tfloor)
+      tyintercept <- (normdps[tceiling]-(tslope*tceiling))
+      
+      tdpvec[j] <- (tslope*pointsI[j])+tyintercept
+    }
+  }
+  tdpvec[length(pointsI)] <- 1
+  
+  stopifnot(!any(is.na(tdpvec)))
+  
+  retlist$norm <- tdpvec
+  
+  return(retlist)
+}
+
 getDataPointsaddi <- function(df,
                               totpert,
                               nump,isFCTBF){

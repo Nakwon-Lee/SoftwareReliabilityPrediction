@@ -1941,13 +1941,9 @@ getSRGMGOFOrigExt <-function(df,pEst,
   
   leftmatrix <- NULL
   rightmatrix <- NULL
-  rightmatrix2 <- NULL
-  lastmatrix <- NULL
   
   leftmatrix <- matrix(nrow=length(modelvec),ncol=1)
-  rightmatrix <- matrix(nrow=length(modelvec),ncol=(length(gofvec)-1))
-  rightmatrix2 <- matrix(nrow=length(modelvec),ncol=1)
-  lastmatrix <- matrix(nrow=length(modelvec),ncol=2)
+  rightmatrix <- matrix(nrow=length(modelvec),ncol=length(gofvec))
   
   observed <- NULL
   observed <- df$n
@@ -1980,32 +1976,32 @@ getSRGMGOFOrigExt <-function(df,pEst,
     rightmatrix[currrowidx,8] <- FC.WLSE(trainh,observed,estimated,pc)
     rightmatrix[currrowidx,9] <- FC.EP(trainh,observed,estimated)
     rightmatrix[currrowidx,10] <- FC.MEOP(1,trainh,observed,estimated)
-    rightmatrix[currrowidx,11] <- FC.TOUP(trainh,observed,estimated)
-    rightmatrix[currrowidx,12] <- abs(FC.Bias(1,trainh,observed,estimated))
+    # rightmatrix[currrowidx,11] <- FC.TOUP(trainh,observed,estimated)
+    # rightmatrix[currrowidx,12] <- abs(FC.Bias(1,trainh,observed,estimated))
     
-    rightmatrix2[currrowidx,1] <- GROUP(FC.Bias(trainh,predh,observed,estimated))
+    # rightmatrix2[currrowidx,1] <- GROUP(FC.Bias(trainh,predh,observed,estimated))
     
-    lastmatrix[currrowidx,1] <- FC.EP(predh,observed,estimated)
-    lastmatrix[currrowidx,2] <- FC.MEOP(trainh,predh,observed,estimated)
+    # lastmatrix[currrowidx,1] <- FC.EP(predh,observed,estimated)
+    # lastmatrix[currrowidx,2] <- FC.MEOP(trainh,predh,observed,estimated)
   }
   
   leftdf <- data.frame(leftmatrix)
   names(leftdf) <- c('Model')
   
   rightdf <- data.frame(rightmatrix)
-  names(rightdf) <- gofvec[1:(length(gofvec)-1)]
+  names(rightdf) <- gofvec
   
-  rightdf2 <- data.frame(rightmatrix2)
-  names(rightdf2) <- gofvec[c(length(gofvec))]
+  # rightdf2 <- data.frame(rightmatrix2)
+  # names(rightdf2) <- gofvec[c(length(gofvec))]
+  # 
+  # lastdf <- data.frame(lastmatrix)
+  # names(lastdf) <- c('EP','MEOP')
   
-  lastdf <- data.frame(lastmatrix)
-  names(lastdf) <- c('EP','MEOP')
-  
-  retinstance <- cbind(leftdf,rightdf,rightdf2,lastdf)
+  retinstance <- cbind(leftdf,rightdf)
   
   retinstance <- na.omit(retinstance)
   
-  for(j in 1:(length(gofvec)-1)){
+  for(j in 1:(length(gofvec))){
     
     valvec  <- retinstance[,gofvec[j]]
     
@@ -2059,6 +2055,53 @@ getSRGMGOFOrigExt <-function(df,pEst,
       }
     }
   }
+  
+  return(retinstance)
+}
+
+getPredQOrigExt <-function(df,pEst,
+                             modelvec,
+                             trainh,predh){
+  leftmatrix <- NULL
+  rightmatrix <- NULL
+  
+  leftmatrix <- matrix(nrow=length(modelvec),ncol=1)
+  rightmatrix <- matrix(nrow=length(modelvec),ncol=2)
+  
+  observed <- NULL
+  observed <- df$n
+  
+  for(i in 1:length(modelvec)){
+    
+    currmodel <- modelvec[i] #current model name
+    
+    estimated <- NULL
+    frestimated <- NULL
+    numparam <- 0
+    
+    pEstsub <- pEst[[currmodel]]
+    estimated <- pEstsub$EstElap
+    frestimated <- pEstsub$EstFr
+    
+    numparam <- pEstsub$NumParam
+    
+    currrowidx  <- i
+    
+    leftmatrix[currrowidx,1] <- currmodel
+    
+    rightmatrix[currrowidx,1] <- FC.EP(predh,observed,estimated)
+    rightmatrix[currrowidx,2] <- FC.MEOP(trainh,predh,observed,estimated)
+  }
+  
+  leftdf <- data.frame(leftmatrix)
+  names(leftdf) <- c('Model')
+  
+  rightdf <- data.frame(rightmatrix)
+  names(rightdf) <- c('EP','MEOP')
+  
+  retinstance <- cbind(leftdf,rightdf)
+  
+  retinstance <- na.omit(retinstance)
   
   crivec <- c('EP','MEOP')
   

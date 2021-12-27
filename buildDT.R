@@ -1,3 +1,19 @@
+
+settingGOFtrain <- function(ptrain,vars,target){
+  right <- vars[1]
+  if(length(vars)>1){
+    for (i in 2:length(vars)){
+      right <- paste0(right,"+",vars[i])
+    }
+  }
+  
+  targetformula <- as.formula(paste0(target,"~",right))
+  
+  adtmodel <- rpart(targetformula,data=ptrain)
+  
+  return(adtmodel)
+}
+
 setting1traincl <- function(ptrain,vars,target){
   right <- vars[1]
   if(length(vars)>1){
@@ -13,7 +29,7 @@ setting1traincl <- function(ptrain,vars,target){
   
   # adtmodel <- svm(targetformula,data=ptrain)
   
-  # adtmodel <- rpart(targetformula,data=ptrain)
+  adtmodel <- rpart(targetformula,data=ptrain)
   
   # adtmodel <- best.randomForest(targetformula,data=ptrain)
   
@@ -237,10 +253,10 @@ setting3train <- function(ptrain,vars,target){
   
   targetformula <- as.formula(paste0(target,"~",right))
   
-  rpartmodel <- J48(targetformula, data = ptrain)
+  # rpartmodel <- J48(targetformula, data = ptrain)
   
-  # rpartmodel <- rpart(targetformula, data = ptrain, method = "class",
-  #                     control = rpart.control(minsplit = 10, cp=0.01))
+  rpartmodel <- rpart(targetformula, data = ptrain, method = "class",
+                      control = rpart.control(minsplit = 10, cp=0.01))
   
   return(rpartmodel)
 }

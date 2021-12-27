@@ -1,4 +1,35 @@
 
+modelgenGOFC <- function(dflist){
+  
+  singleSRGMmodels <- c("GO","GG","Gompz","ISS","MD","MO","YID1","YID2",
+                        "DSS","PNZ","PZ","PZI","Logi")
+  goffts <- c("MSE","MAE","Rsquare","Noise","Bias","Variation","PRR","WLSE",
+              "CEP","CMEOP")
+  ngoffts <- paste0('N',goffts)
+  
+  srgmestlist <- list()
+  goflist <- list()
+  for (i in 1:length(dflist)) {
+    trainhori <- floor((nrow(dflist[[i]])*2)/3)
+    predictionhori <- nrow(dflist[[i]])
+    srgmestlist[[i]] <- getSRGMEstOrig(dflist[[i]],singleSRGMmodels,trainhori,predictionhori)
+    goflist[[i]] <- getSRGMGOFOrigExt(dflist[[i]],srgmestlist[[i]],singleSRGMmodels,goffts,trainhori,predictionhori)
+    predq <- getPredQOrigExt(dflist[[i]],srgmestlist[[i]],singleSRGMmodels,trainhori,predictionhori)
+    for (j in 1:nrow(goflist[[i]])) {
+      goflist[[i]][j,'NMEOP'] <- predq[predq$Model==goflist[[i]][j,'Model'],'NMEOP']
+    }
+  }
+  
+  trainset <- goflist[[1]]
+  for(i in 2:length(goflist)){
+    trainset <- rbind(trainset,goflist[[i]])
+  }
+  
+  rpartEP <- settingGOFtrain(trainset,ngoffts,"NMEOP")
+  
+  return(rpartEP)
+}
+
 # setting1 Leave-one-out wrapper
 
 setting1LOO <- function(goflist,ngoflist,
@@ -179,7 +210,6 @@ setting1LOO <- function(goflist,ngoflist,
   
   return(csvdf)
 }
-
 
 setting111LOO <- function(goflist,
                         gofregvec,

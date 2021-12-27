@@ -1,3 +1,89 @@
+modelgenMETA <- function(dflist){
+  metavec <- c("Variance","Inclination","AutoCorr","MetaNO","NumP","LapFact","SubAddi")
+  singleSRGMmodels <- c("GO","GG","Gompz","ISS","MD","MO","YID1","YID2",
+                        "DSS","PNZ","PZ","PZI","Logi")
+  
+  load('ddmestsave.RData')
+  stopifnot(exists('ddmestlist'))
+  
+  metalist <- list()
+  srgmestlist <- list()
+  #ddmestlist <- list()
+  predqlist <- list()
+  for (i in 1:length(dflist)) {
+    trainhori <- floor((nrow(dflist[[i]])*2)/3)
+    predictionhori <- nrow(dflist[[i]])
+    metalist[[i]] <- getMETAInfoOrig(df = dflist[[i]],metafts = metavec,ptrainh = trainhori)
+    srgmestlist[[i]] <- getSRGMEstOrig(dflist[[i]],singleSRGMmodels,trainhori,predictionhori)
+    #ddmestlist[[i]] <- getDDMEstforSingle(df = dflist[[i]],isFCTBF = 'FC',models = c("SVR"))
+    predqlist[[i]] <- getPredQOrigExt(dflist[[i]],srgmestlist[[i]],singleSRGMmodels,trainhori,predictionhori)
+    predqlist[[i]] <- rbind(predqlist[[i]],getPredQOrigExt(dflist[[i]],ddmestlist[[i]],
+                                                           c('SVR'),trainhori,predictionhori))
+    predqordered <- predqlist[[i]][order(predqlist[[i]]$MEOP),]
+    metalist[[i]]$Best.MEOP <- predqordered[1,'Model']
+  }
+  
+  trainset <- metalist[[1]]
+  for(j in 2:length(metalist)){
+    trainset <- rbind(trainset,metalist[[j]])
+  }
+  
+  trainset$Best.MEOP <- as.character(trainset$Best.MEOP)
+  trainset$Best.MEOP <- as.factor(trainset$Best.MEOP)
+  
+  metavec2 <- c("Variance","Inclination","AutoCorr","MetaNO")
+  
+  right <- NULL
+  right <- metavec2[1]
+  for (k in 2:length(metavec2)){
+    right <- paste0(right,"+",metavec2[k])
+  }
+  
+  targetformula <- NULL
+  targetformula <- as.formula(paste0('Best.MEOP',"~",right))
+  
+  # SMOTE here
+  countdf <- as.data.frame(table(trainset$Best.MEOP))
+  majornum <- max(countdf$Freq)
+  countbest <- countdf[countdf$Freq==majornum,]
+  majorclass <- countbest[1,"Var1"]
+  
+  countminor <- countdf[countdf$Freq!=majornum,]
+  minorclassvec <- countminor[,"Var1"]
+  
+  newntrainset <- NULL
+  
+  majorsub <- trainset[trainset[,'Best.MEOP']==majorclass,c(metavec2,'Best.MEOP')]
+  majorsubnofac <- majorsub
+  majorsubnofac['Best.MEOP'] <- as.character(majorsubnofac[,'Best.MEOP'])
+  newntrainset <- majorsubnofac
+  
+  if(length(minorclassvec) > 0){
+    for(l in 1:length(minorclassvec)){
+      
+      minorsub <- trainset[trainset[,'Best.MEOP']==minorclassvec[l],c(metavec2,'Best.MEOP')]
+      
+      augtrainset <- rbind(majorsub,minorsub)
+      augtrainset['Best.MEOP'] <- as.character(augtrainset[,'Best.MEOP'])
+      augtrainset['Best.MEOP'] <- as.factor(augtrainset[,'Best.MEOP'])
+      
+      augtrainset <- smotethis(augtrainset,targetformula,metavec2,'Best.MEOP',ubConf,pK)
+      
+      augtrainset['Best.MEOP'] <- as.character(augtrainset[,'Best.MEOP'])
+      
+      newntrainset <- rbind(newntrainset,augtrainset[augtrainset[,'Best.MEOP']==minorclassvec[l],])
+    }
+  }
+  
+  newntrainset['Best.MEOP'] <- as.factor(newntrainset[,'Best.MEOP'])
+  # newntrainsetsub <- ntrainsetsub # no SMOTE
+  # SMOTE end
+  
+  rpartEP <- setting3train(newntrainset,metavec2,'Best.MEOP')
+  
+  return(rpartEP)
+}
+
 setting30LOO <- function(ngoflist,nmetalist,
                          metavec,nrmetavec,
                          totpert,measures){
