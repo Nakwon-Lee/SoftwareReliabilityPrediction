@@ -43,4 +43,5 @@ fdata <- read.csv(pargs[3],header=TRUE) # pargs[3]: the path of the csv file s
 # manual execution end
 
 stopifnot(exists('pmodels'))
-resultlist <- reliabilityPrediction(fdata,pmodels)
+resultlist <- reliabilityPrediction(fdata,pmodels,)
+

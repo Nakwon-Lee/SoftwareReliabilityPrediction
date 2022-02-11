@@ -412,8 +412,9 @@ getMETADPInfoAddi <- function(df,totpert,crivec){
 }
 
 getMETAInfoOrig <- function(df,
-                        metafts,
                         ptrainh){
+  
+  metafts <- c("Variance","Inclination","AutoCorr","MetaNO","NumP","LapFact","SubAddi")
   
   observed <- df$f
   elapobsvd <- df$n

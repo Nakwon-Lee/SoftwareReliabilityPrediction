@@ -1934,8 +1934,10 @@ getSRGMGOFOrig <-function(df,pEst,
 
 getSRGMGOFOrigExt <-function(df,pEst,
                           modelvec,
-                          gofvec,
                           trainh,predh){
+  
+  gofvec <- c("MSE","MAE","Rsquare","Noise","Bias","Variation","PRR","WLSE",
+              "CEP","CMEOP","TOUP","GROUP")
   
   pc <- 0.2
   
@@ -1976,8 +1978,8 @@ getSRGMGOFOrigExt <-function(df,pEst,
     rightmatrix[currrowidx,8] <- FC.WLSE(trainh,observed,estimated,pc)
     rightmatrix[currrowidx,9] <- FC.EP(trainh,observed,estimated)
     rightmatrix[currrowidx,10] <- FC.MEOP(1,trainh,observed,estimated)
-    # rightmatrix[currrowidx,11] <- FC.TOUP(trainh,observed,estimated)
-    # rightmatrix[currrowidx,12] <- abs(FC.Bias(1,trainh,observed,estimated))
+    rightmatrix[currrowidx,11] <- FC.TOUP(trainh,observed,estimated)
+    rightmatrix[currrowidx,12] <- GROUP(FC.Bias(trainh,predh,observed,estimated))
     
     # rightmatrix2[currrowidx,1] <- GROUP(FC.Bias(trainh,predh,observed,estimated))
     
@@ -2001,60 +2003,60 @@ getSRGMGOFOrigExt <-function(df,pEst,
   
   retinstance <- na.omit(retinstance)
   
-  for(j in 1:(length(gofvec))){
-    
-    valvec  <- retinstance[,gofvec[j]]
-    
-    if(length(valvec)>1){
-      
-      infidx <- which(is.infinite(valvec))
-      
-      noinfsub <- NULL
-      if(length(infidx)>0){
-        noinfsub <- valvec[-c(infidx)]
-      }else{
-        noinfsub <- valvec
-      }
-      
-      minval <- min(noinfsub)
-      maxval <- max(noinfsub)
-      
-      denominator <- maxval-minval
-      
-      nmzvec <- vector()
-      for (k in 1:length(valvec)) {
-        if(is.infinite(valvec[k])){
-          if(gofvec[j]=="Rsquare"){
-            nmzvec[k] <- 1
-          }else{
-            nmzvec[k] <- 0
-          }
-        }else{
-          if(denominator==0){
-            if(gofvec[j]=="Rsquare"){
-              nmzvec[k] <- 0
-            }else{
-              nmzvec[k] <- 1
-            }
-          }else{
-            if(gofvec[j]=="Rsquare"){
-              nmzvec[k] <- 0 + ((maxval - valvec[k])*0.9)/denominator
-            }else{
-              nmzvec[k] <- 0.1 + ((maxval - valvec[k])*0.9)/denominator
-            }
-          }
-        }
-      }
-      retinstance[paste0("N",gofvec[j])] <- nmzvec
-      
-    }else if(length(valvec)==1){
-      if(gofvec[j]=="Rsquare"){
-        retinstance[paste0("N",gofvec[j])] <- c(0)
-      }else{
-        retinstance[paste0("N",gofvec[j])] <- c(1)
-      }
-    }
-  }
+  # for(j in 1:(length(gofvec))){
+  #   
+  #   valvec  <- retinstance[,gofvec[j]]
+  #   
+  #   if(length(valvec)>1){
+  #     
+  #     infidx <- which(is.infinite(valvec))
+  #     
+  #     noinfsub <- NULL
+  #     if(length(infidx)>0){
+  #       noinfsub <- valvec[-c(infidx)]
+  #     }else{
+  #       noinfsub <- valvec
+  #     }
+  #     
+  #     minval <- min(noinfsub)
+  #     maxval <- max(noinfsub)
+  #     
+  #     denominator <- maxval-minval
+  #     
+  #     nmzvec <- vector()
+  #     for (k in 1:length(valvec)) {
+  #       if(is.infinite(valvec[k])){
+  #         if(gofvec[j]=="Rsquare"){
+  #           nmzvec[k] <- 1
+  #         }else{
+  #           nmzvec[k] <- 0
+  #         }
+  #       }else{
+  #         if(denominator==0){
+  #           if(gofvec[j]=="Rsquare"){
+  #             nmzvec[k] <- 0
+  #           }else{
+  #             nmzvec[k] <- 1
+  #           }
+  #         }else{
+  #           if(gofvec[j]=="Rsquare"){
+  #             nmzvec[k] <- 0 + ((maxval - valvec[k])*0.9)/denominator
+  #           }else{
+  #             nmzvec[k] <- 0.1 + ((maxval - valvec[k])*0.9)/denominator
+  #           }
+  #         }
+  #       }
+  #     }
+  #     retinstance[paste0("N",gofvec[j])] <- nmzvec
+  #     
+  #   }else if(length(valvec)==1){
+  #     if(gofvec[j]=="Rsquare"){
+  #       retinstance[paste0("N",gofvec[j])] <- c(0)
+  #     }else{
+  #       retinstance[paste0("N",gofvec[j])] <- c(1)
+  #     }
+  #   }
+  # }
   
   return(retinstance)
 }
